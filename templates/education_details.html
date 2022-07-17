@@ -1,0 +1,65 @@
+{% extends 'base.html'%}
+
+{% block navigation%}
+{% include 'navbar.html'%}
+{%endblock navigation%}
+{%block content%}
+{% include 'sidebar.html'%}
+<div class="container" style="margin-top: 10px;margin-left:45px">
+    <label class="form-label" style="margin-bottom: 2px;">Educational Details</label>
+    <div class="card" style="height: 600px;width:1100px">
+        <div class="card-body" style="border: 1px solid #e6e6e6; margin: 35px;">
+            <div class="row formRow">
+                <div class="row">
+                    <div class="col-6">
+                        <label for="name" class="form-label">Class</label>
+                        <input type="text" class="form-control" id="name" name="name">
+                    </div>
+                    <div class="col-6">
+                        <div class="form-group">
+                            <label for="family_member" class="form-label">School Name</label>
+                            <select class="form-control" id="family_member">
+                                <option value="undefined" selected disabled>---Select One---</option>
+                                <option value="" >School</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6">
+                        <label for="school_adress" class="form-label">School Address</label>
+                        <input type="text" class="form-control" id="school_address" name="school_address">
+                    </div>
+                    <div class="col-6">
+                        <label for="email" class="form-label">Hobbies
+                        </label>
+                        <input type="text" class="form-control" id="hobbies" name="hobbies">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6">
+                        <label for="mobile" class="form-label">What are the Childs apirations/dreams ?</label>
+                        <textarea  id="w3review" name="aspirations" rows="4" cols="35">
+                        </textarea>
+                    </div>
+                    <div class="col-6">
+                        <label for="mobile" class="form-label">Any achievements or prizes won by the Child? (Upload
+                            supporting documnets)</label>
+                        <textarea id="achievements"  name="achievements" rows="4" cols="35">
+                        </textarea>
+                    </div>
+
+                </div>
+                <div class="row justify-content-end" style="padding: 28px;">
+                    <div class="row justify-content-between col-6">
+                        <button type="submit" class="btn btn-primary mt-3 save" action="updateKid">Save &
+                            Continue</button>
+                        <button type="submit" class="btn btn-outline-primary mt-3 exit">Exit</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{%endblock content%}

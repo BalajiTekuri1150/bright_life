@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Application</title>
+</head>
+
+<body>
+    <form  method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="name">Name :</label>
+            <input type="text" class="form-control" name="name">
+        </div>
+        <div class="form-group">
+            <label for="BirthDay">BirthDay :</label>
+            <input type="date" class="form-control" name="birthDay">
+        </div>
+        <div class="form-group">
+            <label for="email">Email :</label>
+            <input type="email" class="form-control" name="email">
+        </div>
+        <div class="form-group">
+            <label for="mobile">Mobile :</label>
+            <input type="tel" class="form-control" name="mobile">
+        </div>
+        <div class="form-group">
+            <label for="age">Age :</label>
+            <input type="number" class="form-control" name="kidage">
+        </div>
+        <button type="submit" class="btn btn-default">Submit</button>
+    </form>
+</body>
+
+</html>

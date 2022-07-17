@@ -1,0 +1,52 @@
+{% extends 'base.html'%}
+
+{% block  navigation%}
+        {% include 'navbar.html'%}
+{%endblock navigation%}
+{%block content%}
+{% include 'sidebar.html'%}
+<div class="container" style="margin-top: 10px;margin-left:45px">
+        <label class="form-label" style="margin-bottom: 2px;">Guardian Details</label>
+        <div class="card" style="height: 600px;">
+                <div class="card-body" style="border: 1px solid #e6e6e6; margin: 35px;">
+                        <div class="row formRow">
+                                <div class="row">
+                                        <div class="col-6">
+                                                <label for="profession" class="form-label">Profession</label>
+                                                <input type="text" class="form-control" id="profession" name="profession">
+                                        </div>
+                                        <div class="col-6">
+                                                <label for="income" class="form-label">Annual Income</label>
+                                                <input type="number" class="form-control" id="number" name="annual_income">
+                                        </div>
+                                </div>
+                                <div class="row">
+                                    <div class="form-group">
+                                        <label for="family_member">Family Members</label>
+                                        <select class="form-control" id="family_member">
+                                          <option value="" selected>Father</option>
+                                          <option value="" selected>Mother</option>
+                                          <option value="" selected>Guardian</option> 
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="extra_allowance">Extra Allowance</label>
+                                        <select class="form-control" id="extra_allowance">
+                                          <option value="" selected>Other</option> 
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row justify-content-end" style="padding: 28px;">
+                                        <div class="row justify-content-between col-6">
+                                                <button type="submit" class="btn btn-primary mt-3 save" action ="updateKid">Save &
+                                                        Continue</button>
+                                                <button type="submit"
+                                                        class="btn btn-outline-primary mt-3 exit">Exit</button>
+                                        </div>
+                                </div>
+                        </div>
+
+                </div>
+        </div>
+</div>
+{%endblock content%}
