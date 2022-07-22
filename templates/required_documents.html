@@ -1,0 +1,40 @@
+{% extends 'base.html'%}
+
+{% block navigation%}
+{% include 'navbar.html'%}
+{%endblock navigation%}
+{%block content%}
+{% include 'sidebar.html'%}
+<div class="container" style="margin-top: 10px;margin-left:13%">
+    <label class="form-label" style="margin-bottom: 2px;">Required Documents</label>
+    <div class="card" style="height:fit-content;">
+        <div class="card-body" style="border: 1px solid #e6e6e6; margin: 35px;">
+            <div class="row formRow">
+                <div class="row">
+                    <label>Please upload a minimum of three documents from the below mentioned list</label>
+                    <label>the more supporting documents you submit,the easier it will be to verify your
+                        application</label>
+                </div>
+                <div class="row">
+                    <div class="input-group">
+                    <form>
+                        <label>Aadhar Card</label>
+                        <div class="custom-file">
+                          <input type="file" class="custom-file-input" id="customFile">
+                          <label class="custom-file-label" for="aadhar">Aadhar card.JPEG</label>
+                        </div>
+                      </form>
+                </div>
+                <div class="row justify-content-end" style="padding: 28px;">
+                    <div class="row justify-content-between col-6">
+                        <button type="submit" class="btn btn-primary mt-3 save" action="updateKid">Save &
+                            Continue</button>
+                        <button type="submit" class="btn btn-outline-primary mt-3 exit">Exit</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{%endblock content%}

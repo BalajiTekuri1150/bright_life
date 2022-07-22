@@ -1,0 +1,65 @@
+{% extends 'base.html'%}
+
+{% block navigation%}
+{% include 'navbar.html'%}
+{%endblock navigation%}
+{%block content%}
+{% include 'sidebar.html'%}
+<div class="container" style="margin-top: 10px;margin-left:13%">
+    <label class="form-label" style="margin-bottom: 2px;">Bank Details</label>
+    <div class="card" style="height:fit-content;width: 1000px;">
+        <form action="addEducation" method="post">
+            {%csrf_token%}
+            <div class="card-body" style="border: 1px solid #e6e6e6; margin: 35px;">
+                <div class="row formRow">
+                    <div style="padding: 10px;"><b>Bank Details</b></div>
+                    <div class="row">
+                        <div class="col-6">
+                            {{form.bank_name | as_crispy_field}}
+                        </div>
+                        <div class="col-6">
+                            {{form.branch | as_crispy_field}}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            {{form.state | as_crispy_field}}
+                        </div>
+                        <div class="col-6">
+                            {{form.postal_code | as_crispy_field}}
+                        </div>
+                    </div>
+                    <hr class="mt-2 mb-3" />
+                    <div style="padding: 10px;"><b>Account Details</b></div>
+                    <div class="row">
+                        <div class="col-6">
+                            {{form.account_holder | as_crispy_field}}
+                        </div>
+                        <div class="col-6">
+                            {{form.account_number | as_crispy_field}}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            {{form.ifsc | as_crispy_field}}
+                        </div>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="" id="physical_health">
+                        <label class="form-check-label" for="acceptance">
+                            I accept that all the details mentioned in this application are true and my application can be cancelled if proven otherwise
+                        </label>
+                    </div>
+                    <div class="row justify-content-end" style="padding: 15px;">
+                        <div class="row justify-content-between col-5">
+                            <button type="submit" class="btn btn-primary mt-3 save">Save &
+                                Continue</button>
+                            <button href="#" class="btn btn-outline-primary mt-3 exit">Exit</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{%endblock content%}

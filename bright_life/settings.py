@@ -38,9 +38,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'bright_life_app.apps.BrightLifeAppConfig',
-    # 'bright_life_app',
+    'bright_life_app',
+    'crispy_forms',
+    'phonenumber_field',
 ]
+
+
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -84,13 +88,22 @@ WSGI_APPLICATION = 'bright_life.wsgi.application'
 # }
 
 DATABASES = {
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.postgresql_psycopg2',
+    #     'NAME': 'demo', 
+    #     # 'USER': 'rivuletuser', 
+    #     # 'PASSWORD': 'rivulet',
+    #     # 'HOST': '127.0.0.1', 
+    #     # 'PORT': '5432',
+    # }
+
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'demo', 
-        # 'USER': 'rivuletuser', 
-        # 'PASSWORD': 'rivulet',
-        # 'HOST': '127.0.0.1', 
-        # 'PORT': '5432',
+        'NAME': 'postgres', 
+        'USER': 'postgres', 
+        'PASSWORD': 'Deigfh@504',
+        'HOST': '43.205.14.149', 
+        'PORT': '5432',
     }
 }
 

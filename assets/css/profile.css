@@ -1,44 +1,37 @@
-body {
-    background: rgb(99, 39, 120)
+
+
+.card{
+    box-shadow: 0 3px 15px #b0b0b04d;
+    border: 0;
+    width: 1000px;
 }
 
-.form-control:focus {
-    box-shadow: none;
-    border-color: #BA68C8
+
+.formRow .row{
+    margin-left: 0px;
+    margin-bottom: 20px;
 }
 
-.profile-button {
-    background: rgb(99, 39, 120);
-    box-shadow: none;
-    border: none
+.save{
+    width: 200px;
 }
 
-.profile-button:hover {
-    background: #682773
+.exit{
+    width: 135px;
 }
 
-.profile-button:focus {
-    background: #682773;
-    box-shadow: none
+.save, .exit{
+    padding-right: 20px;
 }
 
-.profile-button:active {
-    background: #682773;
-    box-shadow: none
+.form-control{
+    padding: 8px;
 }
 
-.back:hover {
-    color: #682773;
-    cursor: pointer
+button{
+    border-radius: 1px;
 }
 
-.labels {
-    font-size: 11px
-}
-
-.add-experience:hover {
-    background: #BA68C8;
-    color: #fff;
-    cursor: pointer;
-    border: solid 1px #BA68C8
+.radioDiv{
+    display: inline-flex;
 }

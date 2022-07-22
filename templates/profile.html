@@ -1,74 +1,66 @@
 {% extends 'base.html'%}
-
+{% load crispy_forms_tags %}
 {% block  navigation%}
         {% include 'navbar.html'%}
 {%endblock navigation%}
 {%block content%}
 {% include 'sidebar.html'%}
-<div class="container" style="margin-top: 10px;margin-left:45px">
+<div class="container" style="margin-top: 10px;margin-left:13%">
         <label class="form-label" style="margin-bottom: 2px;">My Profile</label>
         <div class="card" style="height: 600px;">
-                <div class="card-body" style="border: 1px solid #e6e6e6; margin: 35px;">
-                        <div class="row formRow">
-                                <div class="row">
-                                        <div class="col-6">
-                                                <label for="name" class="form-label">Name</label>
-                                                <input type="text" class="form-control" id="name" name="name">
-                                        </div>
-                                        <div class="col-6">
-                                                <label for="birthday" class="form-label">Birthday</label>
-                                                <input type="text" class="form-control" id="birthday" name="birthday">
-                                        </div>
-                                </div>
-                                <div class="row">
-                                        <div class="col-6">
-                                                <label for="age" class="form-label">Age</label>
-                                                <input type="text" class="form-control" id="age" name="age">
-                                        </div>
-                                        <div class="col-6">
-                                                <label for="email" class="form-label">Email Address</label>
-                                                <input type="text" class="form-control" id="email" name="email">
-                                        </div>
-                                </div>
-                                <div class="row">
-                                        <div class="col-6">
-                                                <label for="mobile" class="form-label">Mobile number</label>
-                                                <input type="text" class="form-control" id="mobile" name="mobile">
-                                        </div>
-                                        <div class="col-6">
-                                                <label class="form-label">Is the child</label>
-                                                <div class="col-6" style="margin-top: 10px;">
-                                                        <div class="radioDiv">
-                                                                <div class="form-check">
-                                                                        <input type="radio" class="form-check-input"
-                                                                                id="radio1" name="childStatus"
-                                                                                value="option1" checked>
-                                                                        <label class="form-check-label"
-                                                                                for="radio1">Orphan</label>
-                                                                </div>
-                                                                <div class="form-check">
-                                                                        <input type="radio" class="form-check-input"
-                                                                                id="radio2" name="childStatus"
-                                                                                value="option2">
-                                                                        <label class="form-check-label"
-                                                                                for="radio2">Lives with parents</label>
-                                                                </div>
-                                                        </div>
+                <form action="" method = "POST" autocomplete="off">
+                        {%csrf_token%}
+                        <div class="card-body" style="border: 1px solid #e6e6e6; margin: 35px;">
+                                <div class="row formRow">
+                                        <div class="row">
+                                                <div class="col-6">
+                                                        {{form.name | as_crispy_field}}
+                                                </div>
+                                                <div class="col-6">
+                                                        {{form.birthday | as_crispy_field}}
                                                 </div>
                                         </div>
+                                        <div class="row">
+                                                <div class="col-6">
+                                                        {{form.email | as_crispy_field}}
+                                                </div>
+                                                <div class="col-6">
+                                                        {{form.age | as_crispy_field}}
+                                                </div>
+                                        </div>
+                                        <div class="row">
+                                                <div class="col-6">
+                                                        {{form.mobile | as_crispy_field}}
+                                                </div>
+                                                <div class="col-6">
+                                                        {{form.child_type | as_crispy_field}}
 
-                                </div>
-                                <div class="row justify-content-end" style="padding: 28px;">
-                                        <div class="row justify-content-between col-6">
-                                                <button type="submit" class="btn btn-primary mt-3 save" action ="updateKid">Save &
-                                                        Continue</button>
-                                                <button type="submit"
-                                                        class="btn btn-outline-primary mt-3 exit">Exit</button>
+                                                </div>
+
+                                        </div>
+                                        <div class="row justify-content-end" style="padding: 28px;">
+                                                <div class="row justify-content-between col-6">
+                                                        {% if form.id  %}
+                                                                <button type="submit" class="btn btn-primary mt-3 save" 
+                                                                >Update</button>
+                                                        {%else %}
+                                                                <button type="submit" class="btn btn-primary mt-3 save" 
+                                                                >Save & Continue</button>
+                                                        {%endif %}
+                                                        <button type="submit"
+                                                                class="btn btn-outline-primary mt-3 exit">Exit</button>
+                                                </div>
                                         </div>
                                 </div>
-                        </div>
 
-                </div>
+                        </div>
+                </form>
+                
+                
+                
+                
+
+        </form>
         </div>
 </div>
 {%endblock content%}

@@ -1,37 +1,180 @@
+{% load static%}
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="{%static 'css/new_application.css'%}" />
+    <script src="{% static 'js/new_application_script.js'%}" defer>
+    </script>
     <title>New Application</title>
 </head>
 
 <body>
-    <form  method="post">
-        {% csrf_token %}
-        <div class="form-group">
-            <label for="name">Name :</label>
-            <input type="text" class="form-control" name="name">
+    <form action="addApplication" class="form">
+        <!-- Progress bar -->
+        <div class="progressbar">
+            <div class="progress" id="progress"></div>
+            <div class="progress-step progress-step-active" data-title="Kids Details"></div>
+            <div class="progress-step" data-title="Guardian Details"></div>
+            <div class="progress-step" data-title="Education Details"></div>
+            <div class="progress-step" data-title="Required Documents"></div>
+            <div class="progress-step" data-title="Bank Details"></div>
         </div>
-        <div class="form-group">
-            <label for="BirthDay">BirthDay :</label>
-            <input type="date" class="form-control" name="birthDay">
+        <hr>
+        <!-- Steps -->
+        <div class="form-step form-step-active">
+            <div class="input-group">
+                <label for="name" class="form-label">Name</label>
+                <input type="text"  id="name" name="name">
+            </div>
+            <div class="input-group">
+                <label for="birthday" class="form-label">Birthday</label>
+                <input type="date"  id="birthday" name="birthday">
+            </div>
+            <div class="input-group">
+                <label for="age" class="form-label">Age</label>
+                <input type="text" class="form-control" id="age" name="age">
+            </div>
+            <div class="input-group">
+                <label for="email" class="form-label">Email Address</label>
+                <input type="text" class="form-control" id="email" name="email">
+            </div>
+            <div class="input-group">
+                <label for="mobile" class="form-label">Mobile number</label>
+                <input type="tel" class="form-control" id="mobile" name="mobile">
+            </div>
+            <label class="form-label">Is the child</label>
+            <div class="col-6" style="margin-top: 10px;">
+                <div class="radioDiv">
+                    {% for type in childType %}
+                        <div class="form-check">
+                            <input type="radio" class="form-check-input"  name="childStatus" value="type.type"
+                                checked>
+                            <label class="form-check-label" >{{type.description}}</label>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="">
+                <a href="#" class="btn btn-next width-50 ml-auto">Next</a>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="email">Email :</label>
-            <input type="email" class="form-control" name="email">
+        <div class="form-step">
+            <div class="input-group">
+                <label for="profession" class="form-label">Profession</label>
+                <input type="text" class="form-control" id="profession" name="profession">
+            </div>
+            <div class="input-group">
+                <label for="income" class="form-label">Annual Income</label>
+                <input type="number" class="form-control" id="number" name="annual_income">
+            </div>
+            <div class="input-group">
+                <label for="family_member">Relation</label>
+                <select class="form-control" id="family_member">
+                    <option value="">Father</option>
+                    <option value="">Mother</option>
+                    <option value="">Guardian</option> 
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="extra_allowance">Extra Allowance</label>
+                <select class="form-control" id="extra_allowance">
+                    <option value="" selected>Other</option> 
+                </select>
+            </div>
+            <div class="btns-group">
+                <a href="#" class="btn btn-prev">Previous</a>
+                <a href="#" class="btn btn-next">Next</a>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="mobile">Mobile :</label>
-            <input type="tel" class="form-control" name="mobile">
+        <div class="form-step">
+            <div class="input-group">
+                <label for="name" class="form-label">Class</label>
+                <input type="text" class="form-control" id="name" name="name">
+            </div>
+            <div class="input-group">
+                <label for="school" class="form-label">School</label>
+                <input type="text" class="form-control" id="name" name="school">
+            </div>
+            <div class="input-group">
+                <label for="school_adress" class="form-label">School Address</label>
+                <input type="text" class="form-control" id="school_address" name="school_address">
+            </div>
+            <div class="input-group">
+                <label for="email" class="form-label">Hobbies</label>
+                <input type="text" class="form-control" id="hobbies" name="hobbies">
+            </div>
+            <div class="input-group">
+                <label for="mobile" class="form-label">What are the Childs apirations/dreams ?</label>
+                <textarea  id="w3review" name="aspirations" rows="4" cols="35">
+                        </textarea>
+            </div>
+            <div class="input-group">
+                <label for="mobile" class="form-label">Any achievements or prizes won by the Child? (Upload
+                    supporting documnets)</label>
+                <textarea id="achievements"  name="achievements" rows="4" cols="35">
+                </textarea>
+            </div>
+            <div class="btns-group">
+                <a href="#" class="btn btn-prev">Previous</a>
+                <a href="#" class="btn btn-next">Next</a>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="age">Age :</label>
-            <input type="number" class="form-control" name="kidage">
+        <div class="form-step">
+            <div class="input-group">
+                <label>Please upload a minimum of three documents from the below mentioned list</label>
+                <label>the more supporting documents you submit,the easier it will be to verify your
+                        application</label>
+            </div>
+            <div class="input-group">
+                <label>Aadhar Card</label>
+                <div class="custom-file">
+                    <input type="file" class="custom-file-input" id="customFile">
+                    <label class="custom-file-label" for="aadhar">Aadhar card.JPEG</label>
+                </div>
+            </div>
+            <div class="btns-group">
+                <a href="#" class="btn btn-prev">Previous</a>
+                <a href="#" class="btn btn-next">Next</a>
+            </div>
         </div>
-        <button type="submit" class="btn btn-default">Submit</button>
+        <div class="form-step">
+            <div class="input-group">
+                <label for="bank_name" class="form-label">Bank Name</label>
+                <input type="text" class="form-control" id="bank_name" name="bank_name">
+            </div>
+            <div class="input-group">
+                <label for="branch">Branch</label>
+                <input type="text" name="branch" id="branch" />
+            </div>
+            <div class="input-group">
+                <label for="state">State</label>
+                <input type="text" name="state" id="state" />
+            </div>
+            <div class="input-group">
+                <label for="postal_code">Postal Code</label>
+                <input type="number" name="postal_code" id="postal_code" />
+            </div>
+            <div class="input-group">
+                <label for="account_holder">Account Holder</label>
+                <input type="text" name="account_holder" id="account_holder" />
+            </div>
+            <div class="input-group">
+                <label for="account_number">Account Number</label>
+                <input type="text" name="account_number" id="account_number" />
+            </div>
+            <div class="input-group">
+                <label for="ifsc">IFSC</label>
+                <input type="text" name="ifsc" id="ifsc" />
+            </div>
+            <div class="btns-group">
+                <a href="#" class="btn btn-prev">Previous</a>
+                <input type="submit" value="Submit" class="btn" />
+            </div>
+        </div>
     </form>
 </body>
 
