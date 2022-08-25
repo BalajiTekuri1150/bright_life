@@ -1,0 +1,19 @@
+.env
+**/migrations
+
+# Django #
+*.log
+*.pot
+*.pyc
+.logs
+__pycache__
+db.sqlite3
+media
+
+# Python # 
+*.py[cod] 
+*$py.class 
+
+# Installer logs 
+pip-log.txt 
+# pip-delete-this-directory.txt 
