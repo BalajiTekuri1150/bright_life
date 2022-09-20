@@ -2,15 +2,30 @@ from django.urls import URLPattern, path
 
 from . import views
 
-from .views import getApplicationDetails, RegisterUserAPIView,CountryList,GetCountryState,AddApplication,ListGender,ListChildStatus,ListChildType,ListRoles,AddBankDetails,getBankDetails,UpdateBankDetails,LogoutView,AddApplicationProfile,UpdateApplicationProfile,UpdateGuardianDetails,UpdateEducationalDetails,UpdateSponsorProfile,getSponsorProfileView,getApplicationDocuments,UpdateApplicationDocument,SponsoredApplications,Login,AddApplicationDocument,SponsorKid,UpdateSponsorApplication,UpdatePassword,GetOTP,verifyOTP,ResendOTP,ChangePassword,OTPMandatorySignup,GetOTPV2,ResendOTPV2,CreateUserView
+from .views import getApplicationDetails, RegisterUserAPIView,CountryList,GetCountryState,AddApplication,ListGender,ListChildStatus,ListChildType,ListRoles,AddBankDetails,getBankDetails,UpdateBankDetails,LogoutView,AddApplicationProfile,UpdateApplicationProfile,UpdateGuardianDetails,UpdateEducationalDetails,UpdateSponsorProfile,getSponsorProfileView,getApplicationDocuments,UpdateApplicationDocument,SponsoredApplications,Login,AddApplicationDocument,SponsorKid,UpdateSponsorApplication,UpdatePassword,GetOTP,verifyOTP,ResendOTP,ChangePassword,OTPMandatorySignup,GetOTPV2,ResendOTPV2,CreateUserView,RemoveApplicationDocuments,BulkInsertApplicationDocument,createCustomer,updateSubscriptionDetails
 
 from django.conf.urls.static import static
 from django.conf import  settings
 
 from rest_framework.authtoken import views
 
+from django.urls import path,include
+
+from .chargebee_utils import *
+
 
 urlpatterns =[
+    path('brightlife-test.chargebee.com/api/v2/item_families',createItemFamily.as_view(),name="item-families"),
+    path('brightlife-test.chargebee.com/api/v2/items',createItem.as_view(),name="items"),
+    path('brightlife-test.chargebee.com/api/v2/get/items/list',getItemsList.as_view(),name="items"),
+    path('brightlife-test.chargebee.com/api/v2/item_prices',createItemPrice.as_view(),name="create-item-price"),
+    path('brightlife-test.chargebee.com/api/v2/list/customers',listCustomers.as_view(),name="list-customers"),
+    path('brightlife-test.chargebee.com/api/v2/get/checkout',getCheckoutPage.as_view(),name="get-checkout-page"),
+    path('brightlife-test.chargebee.com/api/v2/get/item/prices',getItemPricesList.as_view(),name="get-checkout-page"),
+    path('brightlife-test.chargebee.com/api/v2/create/customer',createCustomer.as_view(),name="get-checkout-page"),
+    path('brightlife-test.chargebee.com/api/v2/update/subscription/details',updateSubscriptionDetails.as_view(),name="get-checkout-page"),
+
+    
     path('brightlife/get/token',views.obtain_auth_token),
     path('brightlife/signin',Login.as_view(),name='login'),
     # path('brightlife/signup',RegisterUserAPIView.as_view(),name="register"),
@@ -60,6 +75,8 @@ urlpatterns =[
     path('brightlife/add/application/documents',AddApplicationDocument.as_view(),name="add_application_documents"),
     path('brightlife/get/application/documents',getApplicationDocuments.as_view(),name="get_application_documents"),
     path('brightlife/update/application/documents',UpdateApplicationDocument.as_view(),name="update_application_documents"),
+    path('brightlife/remove/application/documents',RemoveApplicationDocuments.as_view(),name="update_application_documents"),
+    path('brightlife/bulk/insert/application/documents',BulkInsertApplicationDocument.as_view(),name="add_application_documents"),
 
 
     path('brightlife/sponsor/child',SponsorKid.as_view(),name="sponsor_kid"),

@@ -8,7 +8,10 @@ from decouple import config
 
 SECRET_KEY = config('SECRET_KEY')
 
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG')
+
+CHARGEBEE_APIKEY = config('CHARGEBEE_APIKEY')
+CHARGEBEE_SITENAME = config('CHARGEBEE_SITENAME')
 
 ALLOWED_HOSTS = ["*"]
 
@@ -73,15 +76,20 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
+if not DEBUG:
+    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+else :
+    STATICFILES_DIRS = [os.path.join(BASE_DIR,'static')]   # This is your static folder
 
-STATICFILES_DIRS = [
-os.path.join(BASE_DIR,'static')]   # This is your static folder
-
-STATIC_ROOT = os.path.join(BASE_DIR,'assets') # This is your assets folder
-
+# # STATIC_ROOT = os.path.join(BASE_DIR,'assets') # This is your assets folder
 MEDIA_URL = '/media/'
 
+
+
 MEDIA_ROOT =  os.path.join(BASE_DIR,'media')
+
+
+
 
 #HTTPS settings
 SESSION_COOKIE_SECURE = False
@@ -114,5 +122,5 @@ AWS_S3_REGION_NAME ="ap-south-1"
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 # STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 AWS_S3_SIGNATURE_VERSION = "s3v4"
-# AWS_QUERYSTRING_AUTH = False
+AWS_QUERYSTRING_AUTH = False
 

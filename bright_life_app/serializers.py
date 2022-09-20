@@ -6,6 +6,8 @@ from rest_framework import serializers
 
 from .models import Application, Country, CountryState, ApplicationDocument, EnumApplicationStatus, EnumChildType, EnumDocumentType, EnumGender, EnumUserRole, Sponsor, SponsorApplication, User,BankDetails
 
+from .payment_models import ChargebeeUser
+
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.password_validation import validate_password
 from rest_framework.authtoken.models import Token
@@ -16,6 +18,11 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
 from django.utils.http import urlsafe_base64_decode
 from rest_framework.exceptions import AuthenticationFailed
+
+from django.db import transaction, DatabaseError
+from . import chargebee_utils as chargebee
+
+from .logger import *
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -52,6 +59,45 @@ class RegisterSerializer(serializers.ModelSerializer):
         return str(e)
     return user
 
+# class SignupSerializer(serializers.Serializer):
+#   email = serializers.EmailField(
+#     required=True,
+#     validators=[UniqueValidator(queryset=User.objects.all())])
+#   password = serializers.CharField(
+#     write_only=True, required=True, validators=[validate_password])
+#   password2 = serializers.CharField(write_only=True, required=True)
+#   otp = serializers.CharField()
+#   class Meta:
+#     fields = ('name', 'password', 'password2',
+#          'email', 'role','otp')
+
+#   def validate(self, attrs):
+#     if attrs['password'] != attrs['password2']:
+#       raise serializers.ValidationError(
+#         {"password": "Password fields didn't match."})
+#     return attrs
+#   def create(self, validated_data):
+#     print("serializer method reached")
+#     user = User.objects.create(
+#       name=validated_data['name'],
+#       email=validated_data['email'],
+#       role = validated_data['role'],
+#       is_email_verified = True
+#     )
+#     user.set_password(validated_data['password'])
+#     user.save()
+#     if user.role == "sponsor":
+#       try:
+#         sponsorProfile = Sponsor.objects.create(user_id=user.id,created_by=user.name,last_updated_by=user.name)
+#       except Exception as e:
+#         user.delete()
+#         return str(e)
+#     return user
+
+
+
+
+
 class SignupSerializer(serializers.Serializer):
   email = serializers.EmailField(
     required=True,
@@ -71,21 +117,35 @@ class SignupSerializer(serializers.Serializer):
     return attrs
   def create(self, validated_data):
     print("serializer method reached")
-    user = User.objects.create(
-      name=validated_data['name'],
-      email=validated_data['email'],
-      role = validated_data['role'],
-      is_email_verified = True
-    )
-    user.set_password(validated_data['password'])
-    user.save()
-    if user.role == "sponsor":
-      try:
-        sponsorProfile = Sponsor.objects.create(user_id=user.id,created_by=user.name,last_updated_by=user.name)
-      except Exception as e:
-        user.delete()
-        return str(e)
-    return user
+
+    try:
+      with transaction.atomic():
+        user = User.objects.create(
+        name=validated_data['name'],
+        email=validated_data['email'],
+        role = validated_data['role'],
+        is_email_verified = True)
+        customer = chargebee.create_customer(validated_data)
+        sub_data = ChargebeeUser.create(user=user, customer_id=customer.id)
+        if customer is None or user is None:
+          raise DatabaseError
+        user.set_password(validated_data['password'])
+        user.save()
+        if user.role == "sponsor":
+          try:
+            sponsorProfile = Sponsor.objects.create(user_id=user.id,created_by=user.name,last_updated_by=user.name)
+          except Exception as e:
+            user.delete()
+            return str(e)
+        return user
+        # page = chargebee.create_checkout(customer, 'premium') # 'premium' is the plan id
+        # sub_data.page_id = page.id
+        # sub_data.save()
+        # return redirect(page.url)
+    except DatabaseError as e:
+      logger.exception(str(e))
+
+    
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=255)
@@ -428,6 +488,19 @@ class ClientSponsorApplicationSerializer(serializers.ModelSerializer):
     data = super().to_representation(instance)
     return {k: v for k, v in data.items() if v is not None and v != ""}
 
+# newly added for chargebee details
+class UpdateSponsorApplicationSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = SponsorApplication
+    fields = ['id','sponsor_id','application_id','start_date','status','pledge_date','currency_code','amount','billing_period']
+
+  def to_representation(self, instance):
+    data = super().to_representation(instance)
+    return {k: v for k, v in data.items() if v is not None and v != ""}
+
+
+
+
 class ApplicationDetailsSerializer(serializers.ModelSerializer):
   country = CountrySerializer(read_only=True)
   state = CountryStateSerializer(read_only = True)
@@ -442,6 +515,11 @@ class ApplicationDetailsSerializer(serializers.ModelSerializer):
     data = super().to_representation(instance)
     return {k: v for k, v in data.items() if v is not None and v != ""}
 
+
+class ChargebeeUserSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = ChargebeeUser
+    fields = ["role","user_id","customer_id"]
 
 
 

@@ -15,14 +15,15 @@ DEBUG = False
 
 
 ALLOWED_HOSTS = [
-    '127.0.0.1',
-    'localhost',
+    "*"
     ]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",
     "http://127.0.0.1:8000",
+    "http://43.205.14.149:8000",
 ]
+
 
 # Database configuration
 DATABASES = {
@@ -61,18 +62,23 @@ AUTH_PASSWORD_VALIDATORS = [
 
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS = [
-os.path.join(BASE_DIR,'static')]   # This is your static folder
+STATIC_ROOT = os.path.join(BASE_DIR,'static')
 
-STATIC_ROOT = os.path.join(BASE_DIR,'assets') # This is your assets folder
+STATICFILES_DIRS = [
+os.path.join(BASE_DIR,'static')]
+
+# STATICFILES_DIRS = [
+# os.path.join(BASE_DIR,'static')]   # This is your static folder
+
+# STATIC_ROOT = os.path.join(BASE_DIR,'assets') # This is your assets folder
 
 MEDIA_URL = '/media/'
 
 MEDIA_ROOT =  os.path.join(BASE_DIR,'media')
 
 #HTTPS settings
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+# SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = False
 SECURE_SSL_REDIRECT = False
 
 #HSTS settings
@@ -97,12 +103,17 @@ AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_FILE_OVERWRITE = False
 AWS_DEFAULT_ACL = None
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+# STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 AWS_S3_SIGNATURE_VERSION = "s3v4"
-# AWS_QUERYSTRING_AUTH = False
+AWS_QUERYSTRING_AUTH = False
 
 # STATIC_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/static/'
 
+
+#Chargebee Configuration
+
+CHARGEBEE_APIKEY = config('CHARGEBEE_APIKEY')
+CHARGEBEE_SITENAME = config('CHARGEBEE_SITENAME')
 
 LOGGING = {
     'version': 1,

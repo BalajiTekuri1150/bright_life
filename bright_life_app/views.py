@@ -6,6 +6,7 @@ from inspect import modulesbyfile
 import json
 from logging import exception
 from tkinter import FLAT
+from unittest import result
 from urllib import response
 from django.shortcuts import redirect, render
 
@@ -22,7 +23,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework.exceptions import APIException
 
-from .serializers import ApplicationDetailsSerializer, ApplicationDocumentsSerializer, ChildStatusSerializer, ChildTypeSerializer, ClientUserSerializer, RegisterSerializer,SponsorProfileSerializer,CountrySerializer,CountryStateSerializer,ApplicationProfileSerializer,EducationDetailsSerializer,ApplicationSerializer, UserRoleSerializer,GenderSerializer,BankDetailsSerializer,ClientBankDetailsSerializer,ClientSponsorProfle,ClientApplicationDocumentsSerializer, UserSerializer,LoginSerializer,SponsorApplicationSerializer,ClientSponsorApplicationSerializer,ChangePasswordSerializer,VerifyOTPSerializer,OTPSerializer,UpdatePasswordSerializer,SignupSerializer
+from .serializers import ApplicationDetailsSerializer, ApplicationDocumentsSerializer, ChildStatusSerializer, ChildTypeSerializer, ClientUserSerializer, RegisterSerializer,SponsorProfileSerializer,CountrySerializer,CountryStateSerializer,ApplicationProfileSerializer,EducationDetailsSerializer,ApplicationSerializer, UpdateSponsorApplicationSerializer, UserRoleSerializer,GenderSerializer,BankDetailsSerializer,ClientBankDetailsSerializer,ClientSponsorProfle,ClientApplicationDocumentsSerializer, UserSerializer,LoginSerializer,SponsorApplicationSerializer,ClientSponsorApplicationSerializer,ChangePasswordSerializer,VerifyOTPSerializer,OTPSerializer,UpdatePasswordSerializer,SignupSerializer,ChargebeeUserSerializer
 
 from django.db import IntegrityError
 
@@ -53,7 +54,16 @@ import random
 from django.utils import timezone
 import time
 
+import boto3
+
 from .logger import *
+
+from django.db import transaction
+
+# HTML email required stuff
+# from django.core.mail import EmailMultiAlternatives
+# from django.template.loader import render_to_string
+# from django.utils.html import strip_tags
 
 # class CustomRedirect(HttpResponsePermanentRedirect):
 
@@ -823,29 +833,33 @@ class getApplicationDocuments(APIView):
         logger.info("Application Id : "+ApplicationId)
         if ApplicationId :
             try :
+                result =[]
                 applicationDocuments = ApplicationDocument.objects.filter(application_id = ApplicationId,is_active=True)
+                for i in applicationDocuments:
+                    data ={}
+                    document_type = {}
+                    document_type['id'] = i.document_type.id
+                    document_type['name'] = i.document_type.name
+                    document_type['type'] = i.document_type.type
+                    document_type['description'] = i.document_type.description
+                    data['application_id'] = i.id
+                    data['document_type'] = document_type
+                    data['file_type'] = i.file_type
+                    data['seq_no'] = i.seq_no
+                    data['url']=i.url.url.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
+                    result.append(data)
+                logger.info(result)
                 serializer = ClientApplicationDocumentsSerializer(applicationDocuments,many = True)
-                return Response({"status":True,"response":serializer.data})
+                # print(serializer.data)
+                import json
+                return Response({"status":True,"response":result})
             except ApplicationDocument.DoesNotExist:
                 logger.error("Application Id doesn't exist : "+str(ApplicationId))
                 return Response({"status":False,"error":{"message":str(ApplicationDocument.DoesNotExist)}})
         else :
             return Response({"status":False,"error":{"message":"missing parameter application_id"}})
 
-# def getCommonPath(fileType, fileName):
-#     if fileType == "application_document" :
-#         return "documents/"+"files"+fileName
-#     else :
-#         return fileType+"/images/"+fileName
 
-
-# def upload_to_s3(fileType,filepath,fileName):
-#     access_key =settings.AWS_ACCESS_KEY_ID
-#     access_secret_key = settings.AWS_SECRET_ACCESS_KEY
-#     bucket_name = settings.AWS_STORAGE_BUCKET_NAME 
-#     client = boto3.client('s3',aws_access_key_id = access_key,aws_secret_access_key= access_secret_key)
-#     path = getCommonPath(fileType, fileName)
-#     r = client.uploadFile(bucket_name, path, new File(compressedImageLocation))
 
 def validate_ids(data, field="id", unique=True):
 
@@ -897,6 +911,34 @@ class BulkUpdateApplicationDocument(APIView):
         else :
             return Response({"status":False,"error":{"message":"id field is missing","details":data}})
 
+# def getCommonPath(fileType, fileName):
+#     if fileType == "application_document" :
+#         return "documents/"+"files"+fileName
+#     else :
+#         return fileType+"/images/"+fileName
+
+
+# def upload_to_s3(fileType,filepath,fileName):
+#     access_key =settings.AWS_ACCESS_KEY_ID
+#     access_secret_key = settings.AWS_SECRET_ACCESS_KEY
+#     bucket_name = settings.AWS_STORAGE_BUCKET_NAME 
+#     client = boto3.client('s3',aws_access_key_id = access_key,aws_secret_access_key= access_secret_key)
+#     path = getCommonPath(fileType, fileName)
+#     r = client.uploadFile(bucket_name, path, new File(compressedImageLocation))
+
+def upload_to_s3(file_path,file_name,application_id):
+    access_key =settings.AWS_ACCESS_KEY_ID
+    access_secret_key = settings.AWS_SECRET_ACCESS_KEY
+    bucket_name = settings.AWS_STORAGE_BUCKET_NAME 
+    client = boto3.client('s3',aws_access_key_id = access_key,aws_secret_access_key= access_secret_key)
+    try :
+        client.upload_file(file_path,bucket_name,f'doc/application_'+application_id+'/'+{file_name})
+        url = 'doc/application_'+application_id+'/'+file_name
+    except Exception as e:
+        logger.error("Exception has occured in upload file ",e)
+        return None
+    return url
+
 
 class UpdateApplicationDocument(APIView):
     permission_classes = [IsAuthenticated]
@@ -915,25 +957,41 @@ class UpdateApplicationDocument(APIView):
                 serializer = ApplicationDocumentsSerializer(instance,data=data)
                 if serializer.is_valid():
                     try:
+                        result =[]
                         updatedDocuments=serializer.save()
-                        print("updatedDocuments :")
-                        print(updatedDocuments)
-                        response = ClientApplicationDocumentsSerializer(updatedDocuments)
-                        logger.info(response.data)
-                        return Response({"status":True,"response":{"data":response.data}})
+                        data ={}
+                        document_type = {}
+                        document_type['id'] = updatedDocuments.document_type.id
+                        document_type['name'] = updatedDocuments.document_type.name
+                        document_type['type'] = updatedDocuments.document_type.type
+                        document_type['description'] = updatedDocuments.document_type.description
+                        data['application_id'] = updatedDocuments.id
+                        data['document_type'] = document_type
+                        data['file_type'] = updatedDocuments.file_type
+                        data['seq_no'] = updatedDocuments.seq_no
+                        data['url']= updatedDocuments.url.url.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
+                        result.append(data)
+                        logger.info(result)
+                        # print("updatedDocuments :")
+                        # print(updatedDocuments)
+                        # response = ClientApplicationDocumentsSerializer(updatedDocuments)
+                        # logger.info(response.data)
+                        return Response({"status":True,"response":{"data":result}})
                     except Exception as e:
                         logger.exception(str(e))
                         print("Exception :"+str(e))
                         return Response({"status":False,"error":{"message":str(e)}})
 
                 else:
-                    logger.error(str(e))
+                    logger.error(serializer.errors)
                     return Response({"status":False,"error":{"message":serializer.errors}})
-            except ApplicationDocument.DoesNotExist:
+            except ApplicationDocument.DoesNotExist as e:
                 logger.error(str(e))
-                return Response({"status":False,"error":ApplicationDocument.DoesNotExist})
+                return Response({"status":False,"error":"Application Document Query Doesn't exist"})
         else :
             return Response({"status":False,"error":{"message":"id field is missing","details":data}})
+
+
 
 class AddApplicationDocument(APIView):
     permission_classes = [IsAuthenticated]
@@ -952,8 +1010,52 @@ class AddApplicationDocument(APIView):
         serializer = ApplicationDocumentsSerializer(data = request.data)
         if serializer.is_valid():
             try:
+                result =[]
+                res =serializer.save()
+                data ={}
+                document_type = {}
+                document_type['id'] = res.document_type.id
+                document_type['name'] = res.document_type.name
+                document_type['type'] = res.document_type.type
+                document_type['description'] = res.document_type.description
+                data['application_id'] = res.id
+                data['document_type'] = document_type
+                data['file_type'] = res.file_type
+                data['seq_no'] = res.seq_no
+                data['url']= res.url.url.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
+                result.append(data)
+                # print(result)
+                # response = ClientApplicationDocumentsSerializer(res)
+                # print(response)
+                return Response({"status":True,"response":{"data":result}})
+            except Exception as e:
+                logger.exception(e)
+                # raise APIException
+                return Response({"status ":False,"error":str(e)})
+        else :
+            return Response({"status":False,"error":serializer.errors})
+
+
+class AddApplicationDocumentVersion2(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+    parser_class = (FileUploadParser,)
+
+    def post(self,request):
+        data = self.request.data
+        logger.info(data)
+        # application = data["application_id"]
+        data['created_by'] = request.user.name
+        data['last_updated_by'] = request.user.name
+        # data['application'] = data.pop('application_id')
+        # data['document_type'] = data.pop('document_type_id')
+        # data['application_id'] = data.pop("application_id")
+        serializer = ApplicationDocumentsSerializer(data = request.data)
+        if serializer.is_valid():
+            try:
                 res =serializer.save()
                 response = ClientApplicationDocumentsSerializer(res)
+                print(response)
                 return Response({"status":True,"response":{"data":response.data}})
             except Exception as e:
                 logger.exception(e)
@@ -961,6 +1063,61 @@ class AddApplicationDocument(APIView):
                 return Response({"status ":False,"error":str(e)})
         else :
             return Response({"status":False,"error":serializer.errors})
+
+
+
+
+class BulkInsertApplicationDocument(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+    parser_class = (FileUploadParser,)
+
+    def post(self,request):
+        data1 = self.request.data
+        logger.info(data1)
+        try:
+            with transaction.atomic():
+                for data in data1:
+                    data['created_by'] = request.user.name
+                    data['last_updated_by'] = request.user.name
+                    serializer = ApplicationDocumentsSerializer(data = request.data,many=True)
+                    if serializer.is_valid():
+                        try:
+                            res =serializer.save()
+                            response = ClientApplicationDocumentsSerializer(res)
+                            return Response({"status":True,"response":{"data":response.data}})
+                        except Exception as e:
+                            logger.exception(e)
+                            # raise APIException
+                            return Response({"status ":False,"error":str(e)})
+                    else :
+                        logger.error(serializer.errors)
+                        return Response({"status":False,"error":serializer.errors})
+        except Exception as e:
+            logger.error(str(e))
+            return Response({"status":False,"error":{"message":"Error while inserting","detail":str(e)}})
+                
+
+class RemoveApplicationDocuments(APIView):
+    permission_classes =[IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+
+    def post(self,request):
+        ids = request.data['ids']
+        print(ids)
+        try:
+            with transaction.atomic() :
+                for id in ids:
+                    applicationObj =ApplicationDocument.objects.get(pk = id)
+                    applicationObj.delete()
+            return Response({"status":True,"response":{"message":"Documents deleted successfully"}})
+        except ApplicationDocument.DoesNotExist:
+            logger.error(str(ApplicationDocument.DoesNotExist))
+            return Response({"status":False,"error":{"message":"Application does not exist please check the Id's"}})
+        except Exception as e:
+            logger.error(str(e))
+            return Response({"status":False,"error":{"message":str(e)}})
+
 
 class UpdateApplicationProfile(APIView):
     permission_classes =[IsAuthenticated]
@@ -1192,3 +1349,74 @@ class UpdateGuardianDetails(APIView):
         except Application.DoesNotExist:
             logger.exception(Application.DoesNotExist)
             return Response({"status":False,"error":{"message":"Application doesn't exist with the given id"}})
+
+import chargebee
+from chargebee import InvalidRequestError
+
+
+chargebee.configure(settings.CHARGEBEE_APIKEY, settings.CHARGEBEE_SITENAME)
+
+
+class createCustomer(APIView):
+    def post(self,request):
+        try:
+            with transaction.atomic():
+                data = {}
+                data['role'] = request.data.pop('role')
+                request.data['id'] = data['role']+"_"+str(random.randint(100000,999999))
+                customer = chargebee.Customer.create(request.data)
+                print(customer.__dict__)
+                # print(User.objects.filter(pk=request.data.pop('user_id')).first().id)
+                data['user_id'] = User.objects.filter(pk=request.data.pop('user_id')).first().id
+                data['customer_id'] = customer.customer.id
+                serializer = ChargebeeUserSerializer(data = data)
+                if serializer.is_valid():
+                    serializer.create(data)
+                    return Response({"status":True,"response":customer.__dict__['_response']})
+                return Response({"status":False,"error":{"message":serializer.errors}})
+        except InvalidRequestError as e:
+            print(str(e))
+            return Response({"status":False,"error":{"message":str(e)}})
+        except Exception as e:
+            print(str(e))
+            return Response({"status":False,"error":{"message":str(e)}})
+
+
+class updateSubscriptionDetails(APIView):
+    permission_classes = (AllowAny,)
+    def post(self,request):
+        data = self.request.data
+        logger.info(data)
+        try:
+            print(data['content']['subscription']['id'])
+            sponsor_application = SponsorApplication.objects.get(id = data['content']['subscription']['id'])
+            print(sponsor_application)
+            amount =  data['content']['subscription']['subscription_items'][0]['amount']
+            currency_code = data['content']['subscription']['currency_code']
+            billing_period = data['content']['subscription']['billing_period_unit']
+            print(amount)
+            if amount:
+                sponsor_application.amount = amount
+            if currency_code:
+                sponsor_application.currency_code = currency_code
+            if billing_period :
+                sponsor_application.billing_period = billing_period
+            print(sponsor_application)
+            try:
+                sponsor_application.save()
+                serializer = UpdateSponsorApplicationSerializer(sponsor_application)
+                return Response({"status":True,"response":serializer.data})
+            except IntegrityError as e:
+                logger.exception(str(e))
+                raise ValidationError({"400": f'{str(e)}'})
+            except Exception as e:
+                logger.exception(str(e))
+                # raise APIException
+                return Response({"status":False,"error":{"message":str(e)}})
+        except SponsorApplication.DoesNotExist:
+            logger.exception(SponsorApplication.DoesNotExist)
+            return Response({"status":False,"error":{"message":"Sponsor Application doesn't exist with the given id"}})
+        except Exception as e:
+            print("Exception occured :"+str(e))
+
+

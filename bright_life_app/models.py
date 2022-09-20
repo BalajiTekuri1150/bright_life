@@ -1,6 +1,7 @@
 from ast import Try
 from distutils.command.upload import upload
 from email.policy import default
+from locale import currency
 from pickle import TRUE
 from pyexpat import model
 from re import M
@@ -270,6 +271,11 @@ class ApplicationDocument(models.Model):
     def __str__(self):
         return str(self.id)
 
+    def delete(self,*args,**kwargs):
+        self.url.delete()
+        super().delete(*args,**kwargs)
+
+
 
 
 class BankDetails(models.Model):
@@ -296,6 +302,9 @@ class SponsorApplication(models.Model):
     start_date = models.DateField(null=True,blank=True)
     status = models.CharField(max_length=256,null=True)
     pledge_date = models.DateField(null=True)
+    amount = models.FloatField(null=True,blank=True)
+    currency_code = models.CharField(max_length=256, null=True,blank=True)
+    billing_period = models.CharField(max_length=256,null=True,blank=True)
     is_active = models.BooleanField(default=True)
     created_by = models.CharField(max_length=256,verbose_name="Created By")
     created_date = models.DateTimeField(auto_now_add=True,verbose_name="Created Date")
@@ -307,6 +316,25 @@ class SponsorApplication(models.Model):
 
     def __str__(self):
         return f"{self.sponsor} - {self.application}"
+
+
+# class SponsorApplication(models.Model):
+#     sponsor = models.ForeignKey(Sponsor,on_delete = models.CASCADE)
+#     application = models.ForeignKey(Application,on_delete=models.CASCADE)
+#     start_date = models.DateField(null=True,blank=True)
+#     status = models.CharField(max_length=256,null=True)
+#     pledge_date = models.DateField(null=True)
+#     is_active = models.BooleanField(default=True)
+#     created_by = models.CharField(max_length=256,verbose_name="Created By")
+#     created_date = models.DateTimeField(auto_now_add=True,verbose_name="Created Date")
+#     last_updated_by = models.CharField(max_length=256,verbose_name="Last Updated By")
+#     last_updated_date = models.DateTimeField(verbose_name="Updated Date",auto_now=True)
+
+#     class Meta:
+#         unique_together = ('sponsor', 'application',)
+
+#     def __str__(self):
+#         return f"{self.sponsor} - {self.application}"
 
 class OtpMaster(models.Model):
     target = models.CharField(max_length=60)
@@ -321,3 +349,5 @@ class OtpMaster(models.Model):
 
     def __str__(self):
         return self.target
+
+
