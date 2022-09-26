@@ -4,7 +4,7 @@ from django.forms import CharField
 from pkg_resources import require
 from rest_framework import serializers
 
-from .models import Application, Country, CountryState, ApplicationDocument, EnumApplicationStatus, EnumChildType, EnumDocumentType, EnumGender, EnumUserRole, Sponsor, SponsorApplication, User,BankDetails
+from .models import Application, Country, CountryState, ApplicationDocument, EnumApplicationStatus, EnumChildType, EnumDocumentType, EnumGender, EnumUserRole, Sponsor, Sponsorship, Sponsorship, SponsorshipPayment, User,BankDetails
 
 from .payment_models import ChargebeeUser
 
@@ -469,19 +469,19 @@ class ClientApplicationDocumentsSerializer(serializers.ModelSerializer):
     data = super().to_representation(instance)
     return {k: v for k, v in data.items() if v is not None and v != ""}
 
-class SponsorApplicationSerializer(serializers.ModelSerializer):
+class SponsorshipSerializer(serializers.ModelSerializer):
   class Meta:
-    model = SponsorApplication
+    model = Sponsorship
     fields = "__all__"
 
   def create(self,validated_data):
     validated_data["sponsor_id"] = validated_data.pop("sponsor")
     validated_data["application_id"] = validated_data.pop("application")
-    return SponsorApplication.objects.create(**validated_data)
+    return Sponsorship.objects.create(**validated_data)
 
-class ClientSponsorApplicationSerializer(serializers.ModelSerializer):
+class ClientSponsorshipSerializer(serializers.ModelSerializer):
   class Meta:
-    model = SponsorApplication
+    model = Sponsorship
     fields = ['id','sponsor_id','application_id','start_date','status','pledge_date']
 
   def to_representation(self, instance):
@@ -489,9 +489,9 @@ class ClientSponsorApplicationSerializer(serializers.ModelSerializer):
     return {k: v for k, v in data.items() if v is not None and v != ""}
 
 # newly added for chargebee details
-class UpdateSponsorApplicationSerializer(serializers.ModelSerializer):
+class UpdateSponsorshipSerializer(serializers.ModelSerializer):
   class Meta:
-    model = SponsorApplication
+    model = Sponsorship
     fields = ['id','sponsor_id','application_id','start_date','status','pledge_date','currency_code','amount','billing_period']
 
   def to_representation(self, instance):
@@ -520,6 +520,22 @@ class ChargebeeUserSerializer(serializers.ModelSerializer):
   class Meta:
     model = ChargebeeUser
     fields = ["role","user_id","customer_id"]
+
+
+class SponsorshipPaymentSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = SponsorshipPayment
+    fields = "__all__"
+
+class ClientSponsorshipPaymentSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = SponsorshipPayment
+    fields = ["sponsorship","reference_id","payment_date","currency","amount","next_billing_at","billing_period_unit","subscription_data"]
+
+  def to_representation(self, instance):
+    data = super().to_representation(instance)
+    return {k: v for k, v in data.items() if v is not None and v != ""}
+
 
 
 

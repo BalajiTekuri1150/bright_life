@@ -1,4 +1,5 @@
 from ast import Try
+from datetime import datetime
 from distutils.command.upload import upload
 from email.policy import default
 from locale import currency
@@ -8,6 +9,7 @@ from re import M
 from tkinter import CASCADE, Y
 from unittest.util import _MAX_LENGTH
 from django.db import models
+from django.contrib.postgres.fields import JSONField
 from django.core.validators import MinLengthValidator,MaxLengthValidator
 from django.utils.timezone import now
 from phonenumber_field.modelfields import PhoneNumberField
@@ -18,6 +20,8 @@ from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token 
+
+
 
 # Create your models here.
 
@@ -296,26 +300,49 @@ class BankDetails(models.Model):
     def __str__(self):
         return f"{self.id} - {self.bank_name}"
 
-class SponsorApplication(models.Model):
+
+
+class Sponsorship(models.Model):
     sponsor = models.ForeignKey(Sponsor,on_delete = models.CASCADE)
-    application = models.ForeignKey(Application,on_delete=models.CASCADE)
-    start_date = models.DateField(null=True,blank=True)
-    status = models.CharField(max_length=256,null=True)
-    pledge_date = models.DateField(null=True)
+    pledge_date = models.DateField(auto_now_add=True)
     amount = models.FloatField(null=True,blank=True)
     currency_code = models.CharField(max_length=256, null=True,blank=True)
     billing_period = models.CharField(max_length=256,null=True,blank=True)
+    type = models.CharField(max_length=256,null=True,blank=True)
+    application = models.ForeignKey(Application,on_delete=models.CASCADE)
+    start_date = models.DateField(null=True,blank=True)
+    status = models.CharField(max_length=256,null=True)
     is_active = models.BooleanField(default=True)
     created_by = models.CharField(max_length=256,verbose_name="Created By")
     created_date = models.DateTimeField(auto_now_add=True,verbose_name="Created Date")
     last_updated_by = models.CharField(max_length=256,verbose_name="Last Updated By")
     last_updated_date = models.DateTimeField(verbose_name="Updated Date",auto_now=True)
 
-    class Meta:
-        unique_together = ('sponsor', 'application',)
 
     def __str__(self):
         return f"{self.sponsor} - {self.application}"
+
+
+
+class SponsorshipPayment(models.Model):
+    sponsorship = models.ForeignKey(Sponsorship,on_delete=models.CASCADE)
+    reference_id = models.IntegerField(null=True,blank=True)
+    payment_date = models.DateField(null=True,blank=True)
+    currency = models.CharField(max_length=256)
+    amount = models.FloatField(null=True,blank=True)
+    next_billing_at = models.DateTimeField()
+    billing_period_unit = models.CharField(max_length=256)
+    subscription_data = models.JSONField(blank = True,null=True)
+    created_by = models.CharField(max_length=256,verbose_name="Created By",default="chargebee")
+    created_date = models.DateTimeField(auto_now_add=True,verbose_name="Created Date")
+    last_updated_by = models.CharField(max_length=256,verbose_name="Last Updated By",default="chargebee")
+    last_updated_date = models.DateTimeField(verbose_name="Updated Date",auto_now=True)
+
+    def __str__(self):
+        return f"{self.id} - {self.sponsorship}"
+
+
+
 
 
 # class SponsorApplication(models.Model):

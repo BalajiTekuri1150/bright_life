@@ -2,7 +2,7 @@ from django.urls import URLPattern, path
 
 from . import views
 
-from .views import getApplicationDetails, RegisterUserAPIView,CountryList,GetCountryState,AddApplication,ListGender,ListChildStatus,ListChildType,ListRoles,AddBankDetails,getBankDetails,UpdateBankDetails,LogoutView,AddApplicationProfile,UpdateApplicationProfile,UpdateGuardianDetails,UpdateEducationalDetails,UpdateSponsorProfile,getSponsorProfileView,getApplicationDocuments,UpdateApplicationDocument,SponsoredApplications,Login,AddApplicationDocument,SponsorKid,UpdateSponsorApplication,UpdatePassword,GetOTP,verifyOTP,ResendOTP,ChangePassword,OTPMandatorySignup,GetOTPV2,ResendOTPV2,CreateUserView,RemoveApplicationDocuments,BulkInsertApplicationDocument,createCustomer,updateSubscriptionDetails
+from .views import getApplicationDetails, RegisterUserAPIView,CountryList,GetCountryState,AddApplication,ListGender,ListChildStatus,ListChildType,ListRoles,AddBankDetails,getBankDetails,UpdateBankDetails,LogoutView,AddApplicationProfile,UpdateApplicationProfile,UpdateGuardianDetails,UpdateEducationalDetails,UpdateSponsorProfile,getSponsorProfileView,getApplicationDocuments,UpdateApplicationDocument,SponsoredApplications,Login,AddApplicationDocument,SponsorKid,UpdateSponsorship,UpdatePassword,GetOTP,verifyOTP,ResendOTP,ChangePassword,OTPMandatorySignup,GetOTPV2,ResendOTPV2,CreateUserView,RemoveApplicationDocuments,BulkInsertApplicationDocument,createCustomer,updateSubscriptionDetails
 
 from django.conf.urls.static import static
 from django.conf import  settings
@@ -80,7 +80,7 @@ urlpatterns =[
 
 
     path('brightlife/sponsor/child',SponsorKid.as_view(),name="sponsor_kid"),
-    path('brightlife/update/sponsor/application',UpdateSponsorApplication.as_view(),name="update_sponsor_application"),
+    path('brightlife/update/sponsor/application',UpdateSponsorship.as_view(),name="update_sponsor_application"),
     # path('add/application',AddApplicationProfile.as_view(),name="add_application"),
 
     path('brightlife/list/countries',CountryList.as_view(),name="list_countries"),

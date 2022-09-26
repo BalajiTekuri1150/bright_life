@@ -207,23 +207,24 @@ class getCheckoutPage(APIView):
 class getItemPricesList(APIView):
 
     def get(self,request):
-        currency_code = request.GET.get("currency_code",None)
+        currency_code = request.GET.get("currency_code",["INR","USD"])
         item_id = request.GET.get("item_id",None)
         period = request.GET.get("period",None)
-        period_unit = request.GET.get("period_unit",None)
+        period_unit = request.GET.get("period_unit",["day", "week", "month", "year"])
         status = request.GET.get("status","active")
         print(currency_code)
         try:
             entries = chargebee.ItemPrice.list({
-                "currency_code[is]" : currency_code,
+                "currency_code[in]" : currency_code,
                 "currency_code[isnot]":None,
                 "item_id[is]":item_id,
                 "item_id[isnot]":None,
                 "period[is]":period,
                 "period[notin]":[None],
-                "period_unit[is]":period_unit,
+                "period_unit[in]":period_unit,
                 "status[is]":status
             })
+            print(entries)
             if len(entries) > 0:
                 return Response({"status":True,"response":entries.__dict__})
             else :

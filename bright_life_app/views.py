@@ -23,7 +23,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework.exceptions import APIException
 
-from .serializers import ApplicationDetailsSerializer, ApplicationDocumentsSerializer, ChildStatusSerializer, ChildTypeSerializer, ClientUserSerializer, RegisterSerializer,SponsorProfileSerializer,CountrySerializer,CountryStateSerializer,ApplicationProfileSerializer,EducationDetailsSerializer,ApplicationSerializer, UpdateSponsorApplicationSerializer, UserRoleSerializer,GenderSerializer,BankDetailsSerializer,ClientBankDetailsSerializer,ClientSponsorProfle,ClientApplicationDocumentsSerializer, UserSerializer,LoginSerializer,SponsorApplicationSerializer,ClientSponsorApplicationSerializer,ChangePasswordSerializer,VerifyOTPSerializer,OTPSerializer,UpdatePasswordSerializer,SignupSerializer,ChargebeeUserSerializer
+from .serializers import ApplicationDetailsSerializer, ApplicationDocumentsSerializer, ChildStatusSerializer, ChildTypeSerializer, ClientSponsorshipPaymentSerializer, ClientUserSerializer, RegisterSerializer,SponsorProfileSerializer,CountrySerializer,CountryStateSerializer,ApplicationProfileSerializer,EducationDetailsSerializer,ApplicationSerializer, SponsorshipPaymentSerializer, UpdateSponsorshipSerializer, UserRoleSerializer,GenderSerializer,BankDetailsSerializer,ClientBankDetailsSerializer,ClientSponsorProfle,ClientApplicationDocumentsSerializer, UserSerializer,LoginSerializer,SponsorshipSerializer,ClientSponsorshipSerializer,ChangePasswordSerializer,VerifyOTPSerializer,OTPSerializer,UpdatePasswordSerializer,SignupSerializer,ChargebeeUserSerializer
 
 from django.db import IntegrityError
 
@@ -741,7 +741,7 @@ class SponsoredApplications(APIView,MyPaginator):
         if child_type:
             filters["child_type"] = child_type
         logger.info("Filters : "+str(filters))
-        applicationIds = SponsorApplication.objects.filter(sponsor_id = sponsor_id,is_active=True).values_list('application',flat=True)
+        applicationIds = Sponsorship.objects.filter(sponsor_id = sponsor_id,is_active=True).values_list('application',flat=True)
         queryset = Application.objects.filter(id__in=applicationIds,**filters,is_active=True)
         page = self.paginate_queryset(queryset,request)
         serializer = ApplicationDetailsSerializer(page,many=True)
@@ -1261,22 +1261,23 @@ class SponsorKid(APIView):
         data['sponsor'] = Sponsor.objects.filter(pk = data.pop("sponsor_id")).first().id
         application_id = data['application_id']
         data['application'] = data.pop("application_id")
-        if SponsorApplication.objects.filter(sponsor_id =data['sponsor'],application_id = data['application']).exists():
+        if Sponsorship.objects.filter(sponsor_id =data['sponsor'],application_id = data['application']).exists():
             return Response({"status":False,"error":{"message":"You have already sponsored for this kid"}})
         else :
-            serializer = SponsorApplicationSerializer(data=data)
+            serializer = SponsorshipSerializer(data=data)
             if serializer.is_valid():
                 try:
                     serializer.create(data)
                     status =EnumApplicationStatus.objects.get(status = 'scholorship-received').id
+                    Application.objects.get(pk = data['application']).update(status=data[status])
                     print(status)
                     ApplicationObj = Application.objects.get(pk= application_id)
                     ApplicationObj.status_id = status
                     ApplicationObj.last_updated_by = request.user.name
                     ApplicationObj.save()
                     logger.info(serializer.data)
-                    SponsorApplicationObj = SponsorApplication.objects.latest('id')
-                    res = ClientSponsorApplicationSerializer(SponsorApplicationObj)
+                    SponsorshipObj = Sponsorship.objects.latest('id')
+                    res = ClientSponsorshipSerializer(SponsorshipObj)
                     logger.info(res.data)
                     return Response({"status":True,"response":{"data":res.data}})
                 except Exception as e:
@@ -1286,7 +1287,7 @@ class SponsorKid(APIView):
                 logger.error(serializer.errors)
                 return Response({"status":False,"error":{"message":serializer.errors}})
 
-class UpdateSponsorApplication(APIView):
+class UpdateSponsorship(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
 
@@ -1296,18 +1297,18 @@ class UpdateSponsorApplication(APIView):
         id = data.get("id",None)
         if id:
             try:
-                instance = SponsorApplication.objects.get(id = data['id'])
+                instance = Sponsorship.objects.get(id = data['id'])
                 data['created_by'] = instance.created_by
                 data['last_updated_by'] = request.user.name
                 data['application'] = data.pop("application_id")
                 data['sponsor'] = data.pop("sponsor_id")
-                serializer = SponsorApplicationSerializer(instance,data=data)
+                serializer = SponsorshipSerializer(instance,data=data)
                 if serializer.is_valid():
                     res=serializer.save()
                     print("updated Data :")
                     print(res)
                     logger.info(res)
-                    response = ClientSponsorApplicationSerializer(res)
+                    response = ClientSponsorshipSerializer(res)
                     return Response({"status":True,"response":{"data":response.data}})
                 else:
                     logger.error(serializer.errors)
@@ -1315,9 +1316,9 @@ class UpdateSponsorApplication(APIView):
             except IntegrityError as e:
                 logger.exception(str(e))
                 raise ValidationError({"400": f'{str(e)}'})
-            except SponsorApplication.DoesNotExist:
-                logger.exception(SponsorApplication.DoesNotExist)
-                return Response({"status":False,"error":{"message":str(SponsorApplication.DoesNotExist)}})
+            except Sponsorship.DoesNotExist:
+                logger.exception(Sponsorship.DoesNotExist)
+                return Response({"status":False,"error":{"message":str(Sponsorship.DoesNotExist)}})
         else :
             return Response({"status":False,"error":{"message":"id field is required"}})
 
@@ -1389,32 +1390,51 @@ class updateSubscriptionDetails(APIView):
         logger.info(data)
         try:
             print(data['content']['subscription']['id'])
-            sponsor_application = SponsorApplication.objects.get(id = data['content']['subscription']['id'])
-            print(sponsor_application)
-            amount =  data['content']['subscription']['subscription_items'][0]['amount']
-            currency_code = data['content']['subscription']['currency_code']
-            billing_period = data['content']['subscription']['billing_period_unit']
-            print(amount)
-            if amount:
-                sponsor_application.amount = amount
-            if currency_code:
-                sponsor_application.currency_code = currency_code
-            if billing_period :
-                sponsor_application.billing_period = billing_period
-            print(sponsor_application)
-            try:
-                sponsor_application.save()
-                serializer = UpdateSponsorApplicationSerializer(sponsor_application)
-                return Response({"status":True,"response":serializer.data})
-            except IntegrityError as e:
-                logger.exception(str(e))
-                raise ValidationError({"400": f'{str(e)}'})
-            except Exception as e:
-                logger.exception(str(e))
-                # raise APIException
-                return Response({"status":False,"error":{"message":str(e)}})
-        except SponsorApplication.DoesNotExist:
-            logger.exception(SponsorApplication.DoesNotExist)
+            # sponsorshipPayment = SponsorshipPayment.objects.get(id = data['content']['subscription']['id'])
+            # print(sponsorshipPayment)
+            subscription ={}
+            subscription['sponsorship'] = data['content']['subscription']['id']
+            subscription['reference_id'] = data['content']['customer']['payment_method']['reference_id']
+            subscription['payment_date'] = data['content']['subscription']['created_at']
+            subscription['currency'] = data['content']['subscription']['currency_code']
+            subscription['amount'] =  data['content']['subscription']['subscription_items'][0]['amount']
+            subscription['next_billing_at'] = data['content']['subscription']['next_billing_at']
+            subscription['billing_period'] = data['content']['subscription']['billing_period_unit']
+            subscription['subscription_data'] = data.__dict__
+            print(subscription['subscription_data'])
+            # print(amount)
+            # if amount:
+            #     sponsorshipPayment.amount = amount
+            # if currency_code:
+            #     sponsorshipPayment.currency_code = currency_code
+            # if billing_period :
+            #     sponsorshipPayment.billing_period = billing_period
+            # print(sponsorshipPayment)
+            serializer = SponsorshipPaymentSerializer(data = request.data)
+            if serializer.is_valid():
+                try:
+                    res =serializer.save()
+                    response = ClientSponsorshipPaymentSerializer(res)
+                    print(response)
+                    return Response({"status":True,"response":{"data":response.data}})
+                except Exception as e:
+                    logger.exception(e)
+                    return Response({"status ":False,"error":str(e)})
+            else :
+                return Response({"status":False,"error":{"message":serializer.errors}})
+            # try:
+            #     sponsorshipPayment.save()
+            #     serializer = UpdateSponsorshipSerializer(sponsorshipPayment)
+            #     return Response({"status":True,"response":serializer.data})
+            # except IntegrityError as e:
+            #     logger.exception(str(e))
+            #     raise ValidationError({"400": f'{str(e)}'})
+            # except Exception as e:
+            #     logger.exception(str(e))
+            #     # raise APIException
+            #     return Response({"status":False,"error":{"message":str(e)}})
+        except Sponsorship.DoesNotExist:
+            logger.exception(Sponsorship.DoesNotExist)
             return Response({"status":False,"error":{"message":"Sponsor Application doesn't exist with the given id"}})
         except Exception as e:
             print("Exception occured :"+str(e))
