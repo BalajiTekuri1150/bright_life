@@ -1410,7 +1410,7 @@ class updateSubscriptionDetails(APIView):
             # if billing_period :
             #     sponsorshipPayment.billing_period = billing_period
             # print(sponsorshipPayment)
-            serializer = SponsorshipPaymentSerializer(data = request.data)
+            serializer = SponsorshipPaymentSerializer(data = subscription)
             if serializer.is_valid():
                 try:
                     res =serializer.save()
