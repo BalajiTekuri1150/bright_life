@@ -326,11 +326,11 @@ class Sponsorship(models.Model):
 
 class SponsorshipPayment(models.Model):
     sponsorship = models.ForeignKey(Sponsorship,on_delete=models.CASCADE)
-    reference_id = models.IntegerField(null=True,blank=True)
+    reference_id = models.CharField(max_length=256, null=True,blank=True)
     payment_date = models.DateField(null=True,blank=True)
     currency = models.CharField(max_length=256)
     amount = models.FloatField(null=True,blank=True)
-    next_billing_at = models.DateTimeField()
+    next_billing_at = models.DateTimeField(null=True,blank=True)
     billing_period_unit = models.CharField(max_length=256)
     subscription_data = models.JSONField(blank = True,null=True)
     created_by = models.CharField(max_length=256,verbose_name="Created By",default="chargebee")

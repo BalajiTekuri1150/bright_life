@@ -6,6 +6,7 @@ from inspect import modulesbyfile
 import json
 from logging import exception
 from tkinter import FLAT
+import traceback
 from unittest import result
 from urllib import response
 from django.shortcuts import redirect, render
@@ -59,6 +60,8 @@ import boto3
 from .logger import *
 
 from django.db import transaction
+
+from django.utils.timezone import get_current_timezone
 
 # HTML email required stuff
 # from django.core.mail import EmailMultiAlternatives
@@ -1269,7 +1272,7 @@ class SponsorKid(APIView):
                 try:
                     serializer.create(data)
                     status =EnumApplicationStatus.objects.get(status = 'scholorship-received').id
-                    Application.objects.get(pk = data['application']).update(status=data[status])
+                    Application.objects.get(id = application_id).update(status=data['status'])
                     print(status)
                     ApplicationObj = Application.objects.get(pk= application_id)
                     ApplicationObj.status_id = status
@@ -1392,16 +1395,16 @@ class updateSubscriptionDetails(APIView):
             print(data['content']['subscription']['id'])
             # sponsorshipPayment = SponsorshipPayment.objects.get(id = data['content']['subscription']['id'])
             # print(sponsorshipPayment)
+            dataObj = json.dumps(data)
             subscription ={}
-            subscription['sponsorship'] = data['content']['subscription']['id']
-            subscription['reference_id'] = data['content']['customer']['payment_method']['reference_id']
-            subscription['payment_date'] = data['content']['subscription']['created_at']
-            subscription['currency'] = data['content']['subscription']['currency_code']
-            subscription['amount'] =  data['content']['subscription']['subscription_items'][0]['amount']
-            subscription['next_billing_at'] = data['content']['subscription']['next_billing_at']
-            subscription['billing_period'] = data['content']['subscription']['billing_period_unit']
-            subscription['subscription_data'] = data.__dict__
-            print(subscription['subscription_data'])
+            sponsorship = Sponsorship.objects.get(pk = data['content']['subscription']['id'])
+            reference_id = data['content']['customer']['payment_method']['reference_id']
+            payment_date = datetime.fromtimestamp(data['content']['subscription']['created_at'],tz=get_current_timezone())
+            currency = data['content']['subscription']['currency_code']
+            amount =  data['content']['subscription']['subscription_items'][0]['amount']
+            next_billing_at = datetime.fromtimestamp(data['content']['subscription']['next_billing_at'],tz=get_current_timezone())  
+            billing_period_unit = data['content']['subscription']['billing_period_unit']
+            subscription_data = json.loads(json.dumps(data))
             # print(amount)
             # if amount:
             #     sponsorshipPayment.amount = amount
@@ -1410,18 +1413,20 @@ class updateSubscriptionDetails(APIView):
             # if billing_period :
             #     sponsorshipPayment.billing_period = billing_period
             # print(sponsorshipPayment)
-            serializer = SponsorshipPaymentSerializer(data = subscription)
-            if serializer.is_valid():
-                try:
-                    res =serializer.save()
-                    response = ClientSponsorshipPaymentSerializer(res)
-                    print(response)
-                    return Response({"status":True,"response":{"data":response.data}})
-                except Exception as e:
-                    logger.exception(e)
-                    return Response({"status ":False,"error":str(e)})
-            else :
-                return Response({"status":False,"error":{"message":serializer.errors}})
+            res = SponsorshipPayment.objects.create(sponsorship = sponsorship,reference_id = reference_id,payment_date = payment_date,currency = currency,amount = amount,next_billing_at = next_billing_at,billing_period_unit = billing_period_unit,subscription_data = subscription_data)
+            return Response({"status ":True,"response":{"message":"Successfully updated subscription details"}})
+            # serializer = SponsorshipPaymentSerializer(data = subscription.data)
+            # if serializer.is_valid():
+            #     try:
+            #         res =serializer.save()
+            #         response = ClientSponsorshipPaymentSerializer(res)
+            #         print(response)
+            #         return Response({"status":True,"response":{"data":response.data}})
+            #     except Exception as e:
+            #         logger.exception(e)
+            #         return Response({"status ":False,"error":str(e)})
+            # else :
+                # return Response({"status":False,"error":{"message":serializer.errors}})
             # try:
             #     sponsorshipPayment.save()
             #     serializer = UpdateSponsorshipSerializer(sponsorshipPayment)
@@ -1437,6 +1442,7 @@ class updateSubscriptionDetails(APIView):
             logger.exception(Sponsorship.DoesNotExist)
             return Response({"status":False,"error":{"message":"Sponsor Application doesn't exist with the given id"}})
         except Exception as e:
+            print(traceback.format_exc())
             print("Exception occured :"+str(e))
 
 
