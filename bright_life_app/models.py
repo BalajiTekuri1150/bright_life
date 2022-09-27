@@ -262,7 +262,7 @@ def get_document_upload_path(instance, filename):
 
 class ApplicationDocument(models.Model):
     application = models.ForeignKey(Application,on_delete=models.CASCADE,null=True,related_name="applications")
-    document_type = models.ForeignKey(EnumDocumentType,on_delete=models.CASCADE)
+    document_type = models.ForeignKey(EnumDocumentType,on_delete=models.CASCADE,null=True,blank=True)
     file_type = models.CharField(max_length=256,null=True,blank=True)
     url = models.FileField(upload_to=get_document_upload_path ,validators=[FileExtensionValidator(allowed_extensions=['pdf', 'doc', 'img','png','jpg','jpeg'])],null=True,blank = True)
     seq_no = models.PositiveIntegerField(auto_created=True,default=1000)
