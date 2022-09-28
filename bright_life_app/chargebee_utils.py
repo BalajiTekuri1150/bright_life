@@ -191,7 +191,8 @@ class getCheckoutPage(APIView):
             "shipping_address" : request.data['shipping_address'],
             "currency_code": request.data['currency_code'],
             "customer" : request.data['customer'],
-            "subscription_items" : request.data['subscription_items']
+            "subscription_items" : request.data['subscription_items'],
+            "subscription" : request.data['subscription']
             })
             print(result.hosted_page)
             hosted_page = result.hosted_page

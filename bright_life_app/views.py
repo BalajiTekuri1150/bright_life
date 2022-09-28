@@ -1272,7 +1272,7 @@ class SponsorKid(APIView):
                 try:
                     serializer.create(data)
                     status =EnumApplicationStatus.objects.get(status = 'scholorship-received').id
-                    Application.objects.get(id = application_id).update(status=data['status'])
+                    Application.objects.filter(id = application_id).update(status=data['status'])
                     print(status)
                     ApplicationObj = Application.objects.get(pk= application_id)
                     ApplicationObj.status_id = status
