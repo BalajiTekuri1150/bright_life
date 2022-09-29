@@ -748,7 +748,10 @@ class SponsoredApplications(APIView,MyPaginator):
         queryset = Application.objects.filter(id__in=applicationIds,**filters,is_active=True)
         page = self.paginate_queryset(queryset,request)
         serializer = ApplicationDetailsSerializer(page,many=True)
-        return Response({"status":True,"response":{"SponsoredApplications":{"sponsor_id":int(sponsor_id),"application":serializer.data}}})
+        if (len(serializer.data >0)):
+            return Response({"status":True,"response":{"SponsoredApplications":{"sponsor_id":int(sponsor_id),"application":serializer.data}}})
+        else :
+            return Response({"status" :False,"error":{"message" : "You haven't sponsored any child yet"}});
 
 
 class getBankDetails(APIView):
