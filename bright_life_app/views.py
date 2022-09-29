@@ -1274,8 +1274,6 @@ class SponsorKid(APIView):
             if serializer.is_valid():
                 try:
                     serializer.create(data)
-                    status =EnumApplicationStatus.objects.get(status = 'scholorship-received').id
-                    Application.objects.filter(id = application_id).update(status=data['status'])
                     print(status)
                     ApplicationObj = Application.objects.get(pk= application_id)
                     ApplicationObj.status_id = status
@@ -1408,6 +1406,7 @@ class updateSubscriptionDetails(APIView):
             next_billing_at = datetime.fromtimestamp(data['content']['subscription']['next_billing_at'],tz=get_current_timezone())  
             billing_period_unit = data['content']['subscription']['billing_period_unit']
             subscription_data = json.loads(json.dumps(data))
+            payment_status = data['content']['subscription']['status']
             # print(amount)
             # if amount:
             #     sponsorshipPayment.amount = amount
@@ -1416,6 +1415,12 @@ class updateSubscriptionDetails(APIView):
             # if billing_period :
             #     sponsorshipPayment.billing_period = billing_period
             # print(sponsorshipPayment)
+            Sponsorship.objects.filter(id = data['content']['subscription']['id']).update(status = payment_status)
+            applicationId = Sponsorship.objects.filter(id = data['content']['subscription']['id']).first().application_id
+            print(applicationId)
+            status =EnumApplicationStatus.objects.get(status = 'scholorship-received').id
+            print(status)
+            Application.objects.filter(id = applicationId).update(status= status)
             res = SponsorshipPayment.objects.create(sponsorship = sponsorship,reference_id = reference_id,payment_date = payment_date,currency = currency,amount = amount,next_billing_at = next_billing_at,billing_period_unit = billing_period_unit,subscription_data = subscription_data)
             return Response({"status ":True,"response":{"message":"Successfully updated subscription details"}})
             # serializer = SponsorshipPaymentSerializer(data = subscription.data)
