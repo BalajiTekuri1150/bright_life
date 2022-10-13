@@ -18,11 +18,13 @@ ALLOWED_HOSTS = [
     "*"
     ]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:4200",
-    "http://127.0.0.1:8000",
-    "http://43.205.14.149:8000",
-]
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:4200",
+#     "http://127.0.0.1:8000",
+#     "http://43.205.14.149:8000",
+# ]
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_CREDENTIALS = False
 
 
 # Database configuration
