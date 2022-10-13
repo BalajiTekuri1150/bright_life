@@ -109,6 +109,15 @@ class CreateUserView(APIView):
             logger.exception(str(e))
             raise ValidationError({"400": f'Field {str(e)} missing'})
 
+class CheckEmail(APIView):
+    permission_classes= [AllowAny]
+    authentication_classes =[]
+    def post(self,request):
+        if User.objects.filter(email = request.data.get("email",None)).exists():
+            return Response({"status":False,"error":"User already exists with the given email"})
+        else :
+            return Response({"status":True,"message":"No Account Exists with the given email"})
+
 class OTPMandatorySignup(APIView):
     permission_classes= [AllowAny]
     authentication_classes =[]

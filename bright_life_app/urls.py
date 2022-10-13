@@ -2,7 +2,7 @@ from django.urls import URLPattern, path
 
 from . import views
 
-from .views import getApplicationDetails, RegisterUserAPIView,CountryList,GetCountryState,AddApplication,ListGender,ListChildStatus,ListChildType,ListRoles,AddBankDetails,getBankDetails,UpdateBankDetails,LogoutView,AddApplicationProfile,UpdateApplicationProfile,UpdateGuardianDetails,UpdateEducationalDetails,UpdateSponsorProfile,getSponsorProfileView,getApplicationDocuments,UpdateApplicationDocument,SponsoredApplications,Login,AddApplicationDocument,SponsorKid,UpdateSponsorship,UpdatePassword,GetOTP,verifyOTP,ResendOTP,ChangePassword,OTPMandatorySignup,GetOTPV2,ResendOTPV2,CreateUserView,RemoveApplicationDocuments,BulkInsertApplicationDocument,createCustomer,updateSubscriptionDetails
+from .views import CheckEmail, getApplicationDetails, RegisterUserAPIView,CountryList,GetCountryState,AddApplication,ListGender,ListChildStatus,ListChildType,ListRoles,AddBankDetails,getBankDetails,UpdateBankDetails,LogoutView,AddApplicationProfile,UpdateApplicationProfile,UpdateGuardianDetails,UpdateEducationalDetails,UpdateSponsorProfile,getSponsorProfileView,getApplicationDocuments,UpdateApplicationDocument,SponsoredApplications,Login,AddApplicationDocument,SponsorKid,UpdateSponsorship,UpdatePassword,GetOTP,verifyOTP,ResendOTP,ChangePassword,OTPMandatorySignup,GetOTPV2,ResendOTPV2,CreateUserView,RemoveApplicationDocuments,BulkInsertApplicationDocument,createCustomer,updateSubscriptionDetails
 
 from django.conf.urls.static import static
 from django.conf import  settings
@@ -51,7 +51,7 @@ urlpatterns =[
     path('brightlife/v2/resend/otp',ResendOTPV2.as_view(),name="resend_otp"),
     path('brightlife/v2/signup',OTPMandatorySignup.as_view(),name="register"),
 
-
+    path('brightlife/v2/check/email',CheckEmail.as_view(),name='check_email'),
 
     # path('add/application',AddApplication.as_view(),name="add_profile"),
     path('brightlife/add/application/profile',AddApplicationProfile.as_view(),name="add_profile"),
