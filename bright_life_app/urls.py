@@ -51,7 +51,7 @@ urlpatterns =[
     path('brightlife/v2/resend/otp',ResendOTPV2.as_view(),name="resend_otp"),
     path('brightlife/v2/signup',OTPMandatorySignup.as_view(),name="register"),
 
-    path('brightlife/v2/check/email',CheckEmail.as_view(),name='check_email'),
+    path('brightlife/check/email',CheckEmail.as_view(),name='check_email'),
 
     # path('add/application',AddApplication.as_view(),name="add_profile"),
     path('brightlife/add/application/profile',AddApplicationProfile.as_view(),name="add_profile"),
