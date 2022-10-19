@@ -228,6 +228,7 @@ def generateOTP():
 
 def sendOTP(email,context,user):
     otp = generateOTP()
+    logger.info("generated OTP :"+otp)
     print(otp)
     if context == "forgot_password":
         message = "Dear "+user.name+"\n Use below OTP to reset you BrightLife Account Password \n OTP :"+str(otp)
@@ -239,13 +240,15 @@ def sendOTP(email,context,user):
         data = {'subject':subject,'email_body': message, 'to_email': email}
     # user = User.objects.filter(email = email)
     status = EmailSender.send_email(data)
+    logger.info("Email Status "+status)
     if status > 0:
         expiry_time = datetime.now() + timedelta(minutes = 20)
         current_time = datetime.now()
         oldDetails = OtpMaster.objects.filter(target = email,context = context,expiry_date__gte = current_time).exclude(is_verified = True).first()
+        logger.info("oldDetails"+oldDetails)
         print(oldDetails)
         if oldDetails:
-            print(otp)
+            logger.info("otp :"+otp)
             maxAttempts = 20
             if (oldDetails.issued_count < maxAttempts):
                 OtpMaster.objects.filter(id = oldDetails.id).update(issued_date = current_time, expiry_date=expiry_time,otp = otp,issued_count =oldDetails.issued_count+1)
@@ -264,12 +267,14 @@ def sendOTP(email,context,user):
 
 def sendSignupOTP(email,context):
     otp = generateOTP()
+    logger.info("generated otp :"+otp)
     print(otp)
     message = "Dear User \n Use below OTP to verify your account \n OTP :"+str(otp)
     subject = "Verify your Account"
     data = {'subject':subject,'email_body': message, 'to_email': email}
     logger.info("Signup OTP request :"+str(data))
     status = EmailSender.send_email(data)
+    logger.info("Email sent status:"+status)
     if status > 0:
         expiry_time = timezone.now() + timedelta(minutes = 20)
         current_time = timezone.now()
