@@ -72,6 +72,8 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 
 #Email Configuration
 
+SERVER_EMAIL = config('DEFAULT_FROM_EMAIL')
+
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.office365.com'

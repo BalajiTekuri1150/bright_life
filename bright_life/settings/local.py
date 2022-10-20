@@ -101,7 +101,7 @@ SECURE_HSTS_SECONDS = 31526000  # 1 year
 SECURE_HSTS_PRELOAD = False
 SECURE_HSTS_INCLUDE_SUBDOMAINS = False
 
-
+SERVER_EMAIL = config('DEFAULT_FROM_EMAIL')
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_TLS = True
