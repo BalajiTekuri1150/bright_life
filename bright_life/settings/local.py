@@ -111,6 +111,10 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
 
+ADMINS = (
+    ("Balaji", "balajit@turito.com"),
+)
+
 
 
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
