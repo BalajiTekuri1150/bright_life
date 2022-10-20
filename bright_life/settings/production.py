@@ -84,6 +84,8 @@ ADMINS = (
     ("Balaji", "balajit@turito.com"),
 )
 
+MANAGERS = ADMINS
+
 #AWS S3 configurations
 
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
