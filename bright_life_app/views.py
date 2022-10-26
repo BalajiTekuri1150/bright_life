@@ -409,10 +409,13 @@ class ResendOTP(APIView):
                 message = "Use below OTP to reset you BrightLife Account Password \n OTP :"+otp
                 subject = "Reset your BrightLife Account Password"
                 data = {'subject':subject,'email_body': message, 'to_email': OTPDetails.target}
-                EmailSender.send_email(data)
-                OtpMaster.objects.get(id = referrence_id).update(expiry_date=expiry_time,otp = otp,issued_count = OTPDetails.issued_count+1)
-                logger.info("referrence id "+str(referrence_id))
-                return Response({"status":True,"response":{"message":"OTP sent successfully","reference_id":referrence_id}})
+                status =EmailSender.send_email(data)
+                if status > 0:
+                    OtpMaster.objects.get(id = referrence_id).update(expiry_date=expiry_time,otp = otp,issued_count = OTPDetails.issued_count+1)
+                    logger.info("referrence id "+str(referrence_id))
+                    return Response({"status":True,"response":{"message":"OTP sent successfully","reference_id":referrence_id}})
+                else :
+                    return Response({"status":False,"error":{"message":"error while sending email"}})
             else :
                 otp= generateOTP()
                 logger.info("context : "+OTPDetails.context)
@@ -429,10 +432,14 @@ class ResendOTP(APIView):
                     message = "Use below OTP to reset you BrightLife Account Password \n OTP :"+otp
                     subject = "Reset your BrightLife Account Password"
                     data = {'subject':subject,'email_body': message, 'to_email': OTPDetails.target}
-                EmailSender.send_email(data)
-                OtpMaster.objects.filter(id = referrence_id).update(expiry_date=expiry_time,otp = otp,issued_count =OTPDetails.issued_count+1)
-                logger.info("referrence id : "+str(referrence_id))
-                return Response({"status":True,"response":{"message":"OTP Sent Successfully","referrence_id":referrence_id}})
+                status =EmailSender.send_email(data)
+                if status > 0:
+                    OtpMaster.objects.filter(id = referrence_id).update(expiry_date=expiry_time,otp = otp,issued_count =OTPDetails.issued_count+1)
+                    logger.info("referrence id : "+str(referrence_id))
+                    return Response({"status":True,"response":{"message":"OTP Sent Successfully","referrence_id":referrence_id}})
+                else :
+                    return Response({"status":False,"error":{"message":"error while sending email"}})
+                
         else :
             logger.error("Invalid referrence for resend")
             return Response({"status":False,"message ":"ErrorOTPInvalidReferenceForResend"})
@@ -481,10 +488,13 @@ class ResendOTPV2(APIView):
                         message = "Use below OTP to reset you BrightLife Account Password \n OTP :"+otp
                         subject = "Reset your BrightLife Account Password"
                         data = {'subject':subject,'email_body': message, 'to_email': OTPDetails.target}
-                    EmailSender.send_email(data)
-                    OtpMaster.objects.filter(id = referrence_id).update(expiry_date=expiry_time,otp = otp,issued_count = OTPDetails.issued_count+1)
-                    logger.info("referrence id : "+str(referrence_id))
-                    return Response({"status":True,"response":{"message":"OTP Sent Successfully","referrence_id":referrence_id}})
+                    status =EmailSender.send_email(data)
+                    if status > 0:
+                        OtpMaster.objects.filter(id = referrence_id).update(expiry_date=expiry_time,otp = otp,issued_count = OTPDetails.issued_count+1)
+                        logger.info("referrence id : "+str(referrence_id))
+                        return Response({"status":True,"response":{"message":"OTP Sent Successfully","referrence_id":referrence_id}})
+                    else :
+                        return Response({"status":False,"error":{"message":"Error while sending email"}})
             else :
                 logger.info("ErrorOTPInvalidReferenceForResend OTP")
                 return Response({"status":False,"error":{"message ":"ErrorOTPInvalidReferenceForResend"}})
