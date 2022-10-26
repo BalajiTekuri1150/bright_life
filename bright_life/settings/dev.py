@@ -128,16 +128,13 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'handlers': {
-        'papermerge': {
+        'all_file': {
             'class': 'logging.FileHandler',
-            'filename': 'papermerge.log',
+            'filename': 'log.txt',
             'level': 'DEBUG'
         },
     },
-    'loggers': {
-        'papermerge': {
-            'handlers': ['papermerge'],
-            'level': 'DEBUG'
-        },
+    'root': {
+            'handlers': ['all_file'],
     },
 }
