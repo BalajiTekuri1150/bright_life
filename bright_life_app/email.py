@@ -24,13 +24,13 @@ class EmailSender:
         email_from = settings.EMAIL_HOST_USER
         logger.info("from email : "+str(email_from))
         logger.info("Send mail request : "+str(data))
-        print("email_from : "+str(email_from))
+        logger.info("email_from : "+str(email_from))
         try:
             logger.info("Before Sending email ")
             return send_mail(subject,message,email_from,[email])
         except Exception as e :
             logger.exception("Error while sending email : "+str(e))
-            print("Exception raised when sending email : "+str(e))
+            # print("Exception raised when sending email : "+str(e))
             return -1
 
     # def send_email(data):

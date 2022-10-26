@@ -130,8 +130,8 @@ class OTPMandatorySignup(APIView):
                 data ={}
                 if serializer.is_valid():
                     logger.info("serializer validated successfully"+str(serializer.data))
-                    print(serializer.data)
-                    print("serializer validated successfully")
+                    logger.info(serializer.data)
+                    logger.info("serializer validated successfully")
                     email = serializer.data['email']
                     otp = serializer.data['otp']
                     # mobile = serializer.data['mobile']
@@ -144,7 +144,7 @@ class OTPMandatorySignup(APIView):
                         target_type = "mobile"
                     if verifyUpdateOTP(target,target_type,otp,context):
                         logger.info("OTP Verified Successfully")
-                        print("OTP Verified Successfully")
+                        logger.info("OTP Verified Successfully")
                         user = serializer.create(request.data)
                         logger.info("OTP Verified Successfully"+str(user))
                         data['message'] = "Successfully registered a new user"
@@ -229,7 +229,6 @@ def generateOTP():
 def sendOTP(email,context,user):
     otp = generateOTP()
     logger.info("generated OTP :"+otp)
-    print(otp)
     if context == "forgot_password":
         message = "Dear "+user.name+"\n Use below OTP to reset you BrightLife Account Password \n OTP :"+str(otp)
         subject = "Reset your BrightLife Account Password"
@@ -246,7 +245,6 @@ def sendOTP(email,context,user):
         current_time = datetime.now()
         oldDetails = OtpMaster.objects.filter(target = email,context = context,expiry_date__gte = current_time).exclude(is_verified = True).first()
         logger.info("oldDetails"+str(oldDetails))
-        print(oldDetails)
         if oldDetails:
             logger.info("otp :"+str(otp))
             maxAttempts = 20
@@ -268,7 +266,6 @@ def sendOTP(email,context,user):
 def sendSignupOTP(email,context):
     otp = generateOTP()
     logger.info("generated otp :"+str(otp))
-    print(otp)
     message = "Dear User \n Use below OTP to verify your account \n OTP :"+str(otp)
     subject = "Verify your Account"
     data = {'subject':subject,'email_body': message, 'to_email': email}
@@ -283,8 +280,7 @@ def sendSignupOTP(email,context):
         oldDetails = OtpMaster.objects.filter(target = email,context = context,expiry_date__gte = current_time).exclude(is_verified = True).last()
         if oldDetails:
             logger.info("Old Details :"+str(oldDetails))
-            print(oldDetails.id)
-            print(otp)
+            logger.info(oldDetails.id)
             maxAttempts = 100
             if (oldDetails.issued_count < maxAttempts):
                 OtpMaster.objects.filter(id = oldDetails.id).update(issued_date = current_time, expiry_date=expiry_time,otp = otp,issued_count =oldDetails.issued_count+1)
@@ -293,10 +289,10 @@ def sendSignupOTP(email,context):
                 logger.info("Signup resend OTP max limit exceeded :"+maxAttempts)
                 return None
         else :
-            print("otp :"+str(otp))
+            logger.info("otp :"+str(otp))
             logger.info("otp :"+str(otp))
             OtpMaster.objects.create(target = email,target_type = "email",context= context,otp = otp,expiry_date = expiry_time) 
-            print(OtpMaster.objects.last().id)
+            logger.info(OtpMaster.objects.last().id)
             logger.info(OtpMaster.objects.last().id)
         return OtpMaster.objects.last().id
     else :
@@ -343,7 +339,7 @@ class GetOTPV2(APIView):
             context = serializer.data['context']
             if context == "signup":
                 logger.info("Email :"+email)
-                print(email)
+                logger.info(email)
                 if not User.objects.filter(email = email).exists():
                     try:
                         referrence_id = sendSignupOTP(email,context)
@@ -355,7 +351,7 @@ class GetOTPV2(APIView):
                             return Response({"status":False,"response":{"message":"Error while sending OTP"}},status =status.HTTP_429_TOO_MANY_REQUESTS)
                     except Exception as e:
                         logger.exception(str(e))
-                        print(e)
+                        logger.info(e)
                         # raise APIException
                         return Response({"status":False,"message":str(e)},status = status.HTTP_500_INTERNAL_SERVER_ERROR)
                 else :
@@ -365,7 +361,7 @@ class GetOTPV2(APIView):
                     user = User.objects.get(email=email)
                     try:
                         referrence_id = sendOTP(email,context,user)
-                        print(referrence_id)
+                        logger.info(referrence_id)
                         if referrence_id:
                             logger.info("Reference id "+str(referrence_id))
                             return Response({"status":True,"response":{"message":"OTP Sent Successfully","referrence_id":referrence_id}})
@@ -373,7 +369,6 @@ class GetOTPV2(APIView):
                             return Response({"status":False,"error":{"message":"OTP Limited exceeded"}},status =status.HTTP_429_TOO_MANY_REQUESTS)
                     except Exception as e:
                         logger.exception(str(e))
-                        print(e)
                         raise APIException
                         # return Response({"status":False,"message":str(e)},status = status.HTTP_500_INTERNAL_SERVER_ERROR)
                 else :
@@ -419,7 +414,7 @@ class ResendOTP(APIView):
             else :
                 otp= generateOTP()
                 logger.info("context : "+OTPDetails.context)
-                print(OTPDetails.context)
+                logger.info(OTPDetails.context)
                 if OTPDetails.context == "signup":
                     message = "Dear User \n Use below OTP to verify your account \n OTP :"+str(otp)
                     subject = "Verify your Account"
@@ -462,9 +457,9 @@ class ResendOTPV2(APIView):
                 email = OTPDetails.target
                 logger.info("user id : "+str(OTPDetails.user_id))
                 logger.info("email : "+str(email))
-                print(OTPDetails.user_id)
-                print(email)
-                print(OTPDetails.is_verified)
+                logger.info(OTPDetails.user_id)
+                logger.info(email)
+                logger.info(OTPDetails.is_verified)
                 if OTPDetails.is_verified:
                     logger.info("Invalid referrence for resend OTP")
                     return Response({"status":False,"error":{"message ":"ErrorOTPInvalidReferenceForResend"}})
@@ -475,7 +470,6 @@ class ResendOTPV2(APIView):
                 else :
                     otp = generateOTP()
                     logger.info("context : "+OTPDetails.context)
-                    print(OTPDetails.context)
                     if OTPDetails.context == "signup":
                         message = "Dear User \n Use below OTP to verify your account \n OTP :"+str(otp)
                         subject = "Verify your Account"
@@ -621,7 +615,6 @@ class UpdateSponsorProfile(APIView):
                         return Response({"status":True,"response":{"data":res.data}})
                     except Exception as e:
                         logger.exception(str(e))
-                        print(e)
                         # raise APIException
                         Response({"status":False,"error":{"message":str(e)}})
                 return Response({"status":False,"error":{"message":serializer.errors}})
@@ -813,8 +806,8 @@ class UpdateBankDetails(APIView):
                 serializer = BankDetailsSerializer(instance,data=data)
                 if serializer.is_valid():
                     updatedBankDetails=serializer.save()
-                    print("updatedBankDetails :")
-                    print(updatedBankDetails)
+                    logger.info("updatedBankDetails :")
+                    logger.info(updatedBankDetails)
                     response = ClientBankDetailsSerializer(updatedBankDetails)
                     logger.info(response.data)
                     return Response({"status":True,"response":{"data":response.data}})
@@ -880,7 +873,6 @@ class getApplicationDocuments(APIView):
                     result.append(data)
                 logger.info(result)
                 serializer = ClientApplicationDocumentsSerializer(applicationDocuments,many = True)
-                # print(serializer.data)
                 import json
                 return Response({"status":True,"response":result})
             except ApplicationDocument.DoesNotExist:
@@ -922,14 +914,13 @@ class BulkUpdateApplicationDocument(APIView):
                 if serializer.is_valid():
                     try:
                         updatedDocuments=serializer.save()
-                        print("updatedDocuments :")
-                        print(updatedDocuments)
+                        logger.info("updatedDocuments :")
+                        logger.info(updatedDocuments)
                         response = ClientApplicationDocumentsSerializer(updatedDocuments)
                         logger.info(response.data)
                         return Response({"status":True,"data":response.data})
                     except Exception as e:
                         logger.exception(str(e))
-                        print("Exception :"+str(e))
                         return Response({"status":False,"error":{"message":str(e)}})
 
                 else:
@@ -1009,7 +1000,6 @@ class UpdateApplicationDocument(APIView):
                         return Response({"status":True,"response":{"data":result}})
                     except Exception as e:
                         logger.exception(str(e))
-                        print("Exception :"+str(e))
                         return Response({"status":False,"error":{"message":str(e)}})
 
                 else:
@@ -1085,7 +1075,7 @@ class AddApplicationDocumentVersion2(APIView):
             try:
                 res =serializer.save()
                 response = ClientApplicationDocumentsSerializer(res)
-                print(response)
+                logger.info(response)
                 return Response({"status":True,"response":{"data":response.data}})
             except Exception as e:
                 logger.exception(e)
@@ -1134,7 +1124,7 @@ class RemoveApplicationDocuments(APIView):
 
     def post(self,request):
         ids = request.data['ids']
-        print(ids)
+        logger.info(ids)
         try:
             with transaction.atomic() :
                 for id in ids:
@@ -1298,7 +1288,7 @@ class SponsorKid(APIView):
             if serializer.is_valid():
                 try:
                     serializer.create(data)
-                    print(status)
+                    logger.info(status)
                     ApplicationObj = Application.objects.get(pk= application_id)
                     ApplicationObj.status_id = status
                     ApplicationObj.last_updated_by = request.user.name
@@ -1333,8 +1323,8 @@ class UpdateSponsorship(APIView):
                 serializer = SponsorshipSerializer(instance,data=data)
                 if serializer.is_valid():
                     res=serializer.save()
-                    print("updated Data :")
-                    print(res)
+                    logger.info("updated Data :")
+                    logger.info(res)
                     logger.info(res)
                     response = ClientSponsorshipSerializer(res)
                     return Response({"status":True,"response":{"data":response.data}})
@@ -1394,7 +1384,7 @@ class createCustomer(APIView):
                 data['role'] = request.data.pop('role')
                 request.data['id'] = data['role']+"_"+str(random.randint(100000,999999))
                 customer = chargebee.Customer.create(request.data)
-                print(customer.__dict__)
+                logger.info(customer.__dict__)
                 # print(User.objects.filter(pk=request.data.pop('user_id')).first().id)
                 data['user_id'] = User.objects.filter(pk=request.data.pop('user_id')).first().id
                 data['customer_id'] = customer.customer.id
@@ -1404,10 +1394,10 @@ class createCustomer(APIView):
                     return Response({"status":True,"response":customer.__dict__['_response']})
                 return Response({"status":False,"error":{"message":serializer.errors}})
         except InvalidRequestError as e:
-            print(str(e))
+            logger.exception(str(e))
             return Response({"status":False,"error":{"message":str(e)}})
         except Exception as e:
-            print(str(e))
+            logger.exception(str(e))
             return Response({"status":False,"error":{"message":str(e)}})
 
 
@@ -1417,7 +1407,7 @@ class updateSubscriptionDetails(APIView):
         data = self.request.data
         logger.info(data)
         try:
-            print(data['content']['subscription']['id'])
+            logger.info(data['content']['subscription']['id'])
             # sponsorshipPayment = SponsorshipPayment.objects.get(id = data['content']['subscription']['id'])
             # print(sponsorshipPayment)
             dataObj = json.dumps(data)
@@ -1441,9 +1431,9 @@ class updateSubscriptionDetails(APIView):
             # print(sponsorshipPayment)
             Sponsorship.objects.filter(id = data['content']['subscription']['id']).update(status = payment_status)
             applicationId = Sponsorship.objects.filter(id = data['content']['subscription']['id']).first().application_id
-            print(applicationId)
+            logger.info(applicationId)
             status =EnumApplicationStatus.objects.get(status = 'scholorship-received').id
-            print(status)
+            logger.info(status)
             Application.objects.filter(id = applicationId).update(status= status)
             res = SponsorshipPayment.objects.create(sponsorship = sponsorship,reference_id = reference_id,payment_date = payment_date,currency = currency,amount = amount,next_billing_at = next_billing_at,billing_period_unit = billing_period_unit,subscription_data = subscription_data)
             return Response({"status ":True,"response":{"message":"Successfully updated subscription details"}})
@@ -1474,7 +1464,7 @@ class updateSubscriptionDetails(APIView):
             logger.exception(Sponsorship.DoesNotExist)
             return Response({"status":False,"error":{"message":"Sponsor Application doesn't exist with the given id"}})
         except Exception as e:
-            print(traceback.format_exc())
-            print("Exception occured :"+str(e))
+            logger.exception(traceback.format_exc())
+            logger.exception("Exception occured :"+str(e))
 
 

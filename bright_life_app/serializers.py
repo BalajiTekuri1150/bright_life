@@ -116,7 +116,7 @@ class SignupSerializer(serializers.Serializer):
         {"password": "Password fields didn't match."})
     return attrs
   def create(self, validated_data):
-    print("serializer method reached")
+    logger.info("serializer method reached")
 
     try:
       with transaction.atomic():

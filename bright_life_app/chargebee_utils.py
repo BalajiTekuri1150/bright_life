@@ -55,34 +55,34 @@ def create_customer(data):
 
 class createItemFamily(APIView):
     def post(self,request):
-        print(request.data)
+        logger.info(request.data)
         try:
             entries = chargebee.Item.list({
              "limit" : 2
             })
-            print(entries)
+            logger.info(entries)
             for entry in entries:
                 item = entry.item
-                print(item)
+                logger.info(item)
             result = chargebee.ItemFamily.create({
                 "id" : request.data['id'],
                 "description" : request.data['description'],
                 "name" : request.data['name']
                 })
-            print(result)
+            logger.info(result)
             item_family = result.item_family
             return Response({'status':True,'response':{'data':item_family.__dict__}})
         except InvalidRequestError as e:
-            print(str(e))
+            logger.info(str(e))
             return Response({"status":False,"error":{"message":str(e)}})
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             return Response({"status":False,"error":{"message":str(e)}})
 
 
 class createItem(APIView):
     def post(self,request):
-        print(request.data)
+        logger.info(request.data)
         try:
             result = chargebee.Item.create({
             "id" : request.data['id'],
@@ -91,14 +91,14 @@ class createItem(APIView):
             "description" : request.data['description'],
             "item_family_id" : request.data['item_family_id']
             })
-            print(result)
+            logger.info(result)
             item = result.item
             return Response({'status':True,'response':{'data':item.__dict__}})
         except InvalidRequestError as e:
-            print(str(e))
+            logger.info(str(e))
             return Response({"status":False,"error":{"message":str(e)}})
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             return Response({"status":False,"error":{"message":str(e)}})
 
 class getItemsList(APIView):
@@ -117,7 +117,7 @@ class getItemsList(APIView):
 
 class createItemPrice(APIView):
     def post(self,request):
-        print(request.data)
+        logger.info(request.data)
         try:
             result = chargebee.ItemPrice.create({
             "id" : request.data['id'],
@@ -128,14 +128,14 @@ class createItemPrice(APIView):
             "period" : request.data['period'],
             "currency_code" : request.data['currency_code'],
             })
-            print(result)
+            logger.info(result)
             item_price = result.item_price
             return Response({'status':True,'response':{'data':item_price.__dict__}})
         except InvalidRequestError as e:
-            print(str(e))
+            logger.info(str(e))
             return Response({"status":False,"error":{"message":str(e)}})
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             return Response({"status":False,"error":{"message":str(e)}})
 
 
@@ -152,10 +152,10 @@ class updateItemPrice(APIView):
             item_price = result.item_price
             return Response({"status":True,"response":result.item_price})
         except InvalidRequestError as e:
-            print(str(e))
+            logger.info(str(e))
             return Response({"status":False,"error":{"message":str(e)}})
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             return Response({"status":False,"error":{"message":str(e)}})
 
 
@@ -185,7 +185,7 @@ class listCustomers(APIView):
 
 class getCheckoutPage(APIView):
     def post(self,request):
-        print(request.data)
+        logger.info(request.data)
         try:
             result = chargebee.HostedPage.checkout_new_for_items({
             "shipping_address" : request.data['shipping_address'],
@@ -194,14 +194,14 @@ class getCheckoutPage(APIView):
             "subscription_items" : request.data['subscription_items'],
             "subscription" : request.data['subscription']
             })
-            print(result.hosted_page)
+            logger.info(result.hosted_page)
             hosted_page = result.hosted_page
             return Response({'status':True,"response":{"data":hosted_page.__dict__}})
         except InvalidRequestError as e:
-            print(str(e))
+            logger.info(str(e))
             return Response({"status":False,"error":{"message":str(e)}})
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             return Response({"status":False,"error":{"message":str(e)}})
 
 
@@ -213,7 +213,7 @@ class getItemPricesList(APIView):
         period = request.GET.get("period",None)
         period_unit = request.GET.get("period_unit",["day", "week", "month", "year"])
         status = request.GET.get("status","active")
-        print(currency_code)
+        logger.info(currency_code)
         try:
             entries = chargebee.ItemPrice.list({
                 "currency_code[in]" : currency_code,
@@ -225,7 +225,7 @@ class getItemPricesList(APIView):
                 "period_unit[in]":period_unit,
                 "status[is]":status
             })
-            print(entries)
+            logger.info(entries)
             if len(entries) > 0:
                 return Response({"status":True,"response":entries.__dict__})
             else :
