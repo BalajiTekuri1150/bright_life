@@ -95,6 +95,7 @@ class CreateUserView(APIView):
                     data['message'] = "Successfully registered a new user"
                     data['email'] = user.email
                     data['name'] = user.name
+                    data['id'] = user.id
                     token = Token.objects.get(user=user).key
                     data['token'] = token
                     return Response({"status":True,"response":{"data":data}})
@@ -150,6 +151,7 @@ class OTPMandatorySignup(APIView):
                         data['message'] = "Successfully registered a new user"
                         data['email'] = user.email
                         data['name'] = user.name
+                        data['id'] = user.id
                         token = Token.objects.get(user=user).key
                         data['token'] = token
                         return Response({"status":True,"response":{"data":data}})
