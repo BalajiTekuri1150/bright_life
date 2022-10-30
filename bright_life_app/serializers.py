@@ -128,6 +128,8 @@ class SignupSerializer(serializers.Serializer):
         customer = chargebee.create_customer(validated_data)
         sub_data = ChargebeeUser.create(user=user, customer_id=customer.id)
         if customer is None or user is None:
+          logger.info("customer object :"+customer)
+          logger.info("user object :"+user)
           raise DatabaseError
         user.set_password(validated_data['password'])
         user.save()
@@ -135,6 +137,7 @@ class SignupSerializer(serializers.Serializer):
           try:
             sponsorProfile = Sponsor.objects.create(user_id=user.id,created_by=user.name,last_updated_by=user.name)
           except Exception as e:
+            logger.exception(str(e))
             user.delete()
             return str(e)
         return user
