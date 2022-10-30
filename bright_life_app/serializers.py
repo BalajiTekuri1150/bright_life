@@ -149,6 +149,10 @@ class SignupSerializer(serializers.Serializer):
         # return redirect(page.url)
     except DatabaseError as e:
       logger.exception(str(e))
+      return str(e)
+    except Exception as e:
+      logger.exception(str(e))
+      return str(e)
 
     
 
