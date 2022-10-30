@@ -126,7 +126,9 @@ class SignupSerializer(serializers.Serializer):
         role = validated_data['role'],
         is_email_verified = True)
         customer = chargebee.create_customer(validated_data)
+        logger.info("after creating chargebee account"+customer)
         sub_data = ChargebeeUser.create(user=user, customer_id=customer.id)
+        logger.info("after creating Chargebee user"+sub_data)
         if customer is None or user is None:
           logger.info("customer object :"+customer)
           logger.info("user object :"+user)
