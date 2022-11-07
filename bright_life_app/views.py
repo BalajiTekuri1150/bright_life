@@ -771,14 +771,22 @@ class SponsoredApplications(APIView,MyPaginator):
         if child_type:
             filters["child_type"] = child_type
         logger.info("Filters : "+str(filters))
-        applicationIds = Sponsorship.objects.filter(sponsor_id = sponsor_id,is_active=True).values_list('application',flat=True)
-        queryset = Application.objects.filter(id__in=applicationIds,**filters,is_active=True)
-        page = self.paginate_queryset(queryset,request)
-        serializer = ApplicationDetailsSerializer(page,many=True)
-        if (len(serializer.data >0)):
-            return Response({"status":True,"response":{"SponsoredApplications":{"sponsor_id":int(sponsor_id),"application":serializer.data}}})
-        else :
-            return Response({"status" :False,"error":{"message" : "You haven't sponsored any child yet"}});
+        try:
+            applicationIds = Sponsorship.objects.filter(sponsor_id = sponsor_id,is_active=True).values_list('application',flat=True)
+            logger.info("Application Ids :"+str(applicationIds))
+            queryset = Application.objects.filter(id__in=applicationIds,**filters,is_active=True)
+            logger.info("query set : "+str(queryset))
+            page = self.paginate_queryset(queryset,request)
+            serializer = ApplicationDetailsSerializer(page,many=True)
+            logger.info(serializer.data)
+            if (len(serializer.data) >0):
+                return Response({"status":True,"response":{"SponsoredApplications":{"sponsor_id":sponsor_id,"application":serializer.data}}})
+            else :
+                return Response({"status" :False,"error":{"message" : "You haven't sponsored any child yet"}})
+        except Exception as e:
+            logger.exception(traceback.format_exc())
+            logger.exception("Exception occured :"+str(e))
+            return Response({"status ": False,"error ": str})
 
 
 class getBankDetails(APIView):
@@ -984,12 +992,14 @@ class UpdateApplicationDocument(APIView):
                 instance = ApplicationDocument.objects.get(id = data['id'])
                 data['created_by'] = instance.created_by
                 data['last_updated_by'] = request.user.name
+                data['is_active'] = True
                 # data['application'] = data.pop("application_id")
                 serializer = ApplicationDocumentsSerializer(instance,data=data)
                 if serializer.is_valid():
                     try:
                         result =[]
                         updatedDocuments=serializer.save()
+                        logger.info("updated Documents"+str(updatedDocuments))
                         data ={}
                         document_type = {}
                         document_type['id'] = updatedDocuments.document_type.id
@@ -1034,6 +1044,7 @@ class AddApplicationDocument(APIView):
         # application = data["application_id"]
         data['created_by'] = request.user.name
         data['last_updated_by'] = request.user.name
+        data['is_active'] = True
         # data['application'] = data.pop('application_id')
         # data['document_type'] = data.pop('document_type_id')
         # data['application_id'] = data.pop("application_id")
@@ -1048,7 +1059,7 @@ class AddApplicationDocument(APIView):
                 document_type['name'] = res.document_type.name
                 document_type['type'] = res.document_type.type
                 document_type['description'] = res.document_type.description
-                data['application_id'] = res.id
+                data['document_id'] = res.id
                 data['document_type'] = document_type
                 data['file_type'] = res.file_type
                 data['seq_no'] = res.seq_no
@@ -1202,15 +1213,15 @@ class AddApplicationProfile(APIView):
         data = request.data
         logger.info(data)
         email_exists = Application.objects.filter(email=data.get('email',None)).exists()
-        mobile_exists = Application.objects.filter(mobile=data.get('mobile',None)).exists()
+        # mobile_exists = Application.objects.filter(mobile=data.get('mobile',None)).exists()
         logger.info("email exists : "+str(email_exists))
-        logger.info("mobile exists : "+str(mobile_exists))
-        if email_exists and mobile_exists:
-            return Response({"status":False,"error":{"message":"Email and Mobile already Exists"}})
-        elif email_exists:
+        # logger.info("mobile exists : "+str(mobile_exists))
+        # if email_exists and mobile_exists:
+        #     return Response({"status":False,"error":{"message":"Email and Mobile already Exists"}})
+        if email_exists:
             return Response({"status":False,"error":{"message":"Email already linked to other application"}})
-        elif mobile_exists :
-            return Response({"status":False,"error":{"message":"Mobile already linked to other application"}})
+        # elif mobile_exists :
+        #     return Response({"status":False,"error":{"message":"Mobile already linked to other application"}})
         else:
             data['created_by'] = request.user.name
             data['last_updated_by'] = request.user.name
@@ -1298,11 +1309,11 @@ class SponsorKid(APIView):
             if serializer.is_valid():
                 try:
                     serializer.create(data)
-                    logger.info(status)
-                    ApplicationObj = Application.objects.get(pk= application_id)
-                    ApplicationObj.status_id = status
-                    ApplicationObj.last_updated_by = request.user.name
-                    ApplicationObj.save()
+                    # logger.info(status)
+                    # ApplicationObj = Application.objects.get(pk= application_id)
+                    # ApplicationObj.status_id = status
+                    # ApplicationObj.last_updated_by = request.user.name
+                    # ApplicationObj.save()
                     logger.info(serializer.data)
                     SponsorshipObj = Sponsorship.objects.latest('id')
                     res = ClientSponsorshipSerializer(SponsorshipObj)

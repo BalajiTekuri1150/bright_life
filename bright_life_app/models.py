@@ -240,7 +240,7 @@ class Application(models.Model):
     school_address = models.CharField(max_length = 256, null = True,blank=True)
     hobbies = models.TextField(max_length = 20,null = True,blank=True,default='')
     aspirations = models.TextField(null = True,blank=True,default='')
-    status = models.ForeignKey(EnumApplicationStatus,on_delete=models.CASCADE,null=True)
+    status = models.ForeignKey(EnumApplicationStatus,on_delete=models.CASCADE,null=True,default=2)
     achievements = models.TextField(null=True,blank=True,default='')
     about = models.TextField(null=True,blank=True)
     profession = models.CharField(max_length=256,null=True,blank=True)
@@ -255,6 +255,9 @@ class Application(models.Model):
 
     def __str__(self):
         return str(self.id)
+
+    class Meta:
+        ordering=('-id',)
 
 def get_document_upload_path(instance, filename):
     return 'doc/application_{0}/{1}'.format(instance.application_id, filename)
