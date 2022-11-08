@@ -2,7 +2,7 @@ from django.urls import URLPattern, path
 
 from . import views
 
-from .views import CheckEmail, ListDocumentTypes, getApplicationDetails, RegisterUserAPIView,CountryList,GetCountryState,AddApplication,ListGender,ListChildStatus,ListChildType,ListRoles,AddBankDetails,getBankDetails,UpdateBankDetails,LogoutView,AddApplicationProfile,UpdateApplicationProfile,UpdateGuardianDetails,UpdateEducationalDetails,UpdateSponsorProfile,getSponsorProfileView,getApplicationDocuments,UpdateApplicationDocument,SponsoredApplications,Login,AddApplicationDocument,SponsorKid,UpdateSponsorship,UpdatePassword,GetOTP,verifyOTP,ResendOTP,ChangePassword,OTPMandatorySignup,GetOTPV2,ResendOTPV2,CreateUserView,RemoveApplicationDocuments,BulkInsertApplicationDocument,createCustomer,updateSubscriptionDetails
+from .views import CheckEmail, ListDocumentTypes, UpdateGuardianProfile, getApplicationDetails, RegisterUserAPIView,CountryList,GetCountryState,AddApplication,ListGender,ListChildStatus,ListChildType,ListRoles,AddBankDetails,getBankDetails,UpdateBankDetails,LogoutView,AddApplicationProfile,UpdateApplicationProfile,UpdateGuardianDetails,UpdateEducationalDetails,UpdateSponsorProfile, getGuardianProfileView,getSponsorProfileView,getApplicationDocuments,UpdateApplicationDocument,SponsoredApplications,Login,AddApplicationDocument,SponsorKid,UpdateSponsorship,UpdatePassword,GetOTP,verifyOTP,ResendOTP,ChangePassword,OTPMandatorySignup,GetOTPV2,ResendOTPV2,CreateUserView,RemoveApplicationDocuments,BulkInsertApplicationDocument,createCustomer,updateSubscriptionDetails
 
 from django.conf.urls.static import static
 from django.conf import  settings
@@ -71,6 +71,9 @@ urlpatterns =[
     path('brightlife/get/sponsor/profile',getSponsorProfileView.as_view(),name="get_sponsor_view"),
     path('brightlife/update/sponsor/profile',UpdateSponsorProfile.as_view(),name="update_sponsor_profile"),
     path('brightlife/get/sponsor/kids',SponsoredApplications.as_view(),name="get_sponsor_kids"),
+
+    path('brightlife/get/guardian/profile',getGuardianProfileView.as_view(),name="get_guardian_view"),
+    path('brightlife/update/guardian/profile',UpdateGuardianProfile.as_view(),name="update_guardian_profile"),
     
     path('brightlife/add/application/documents',AddApplicationDocument.as_view(),name="add_application_documents"),
     path('brightlife/get/application/documents',getApplicationDocuments.as_view(),name="get_application_documents"),

@@ -24,7 +24,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework.exceptions import APIException
 
-from .serializers import ApplicationDetailsSerializer, ApplicationDocumentsSerializer, ChildStatusSerializer, ChildTypeSerializer, ClientSponsorshipPaymentSerializer, ClientUserSerializer, DocumentTypeSerializer, RegisterSerializer,SponsorProfileSerializer,CountrySerializer,CountryStateSerializer,ApplicationProfileSerializer,EducationDetailsSerializer,ApplicationSerializer, SponsorshipPaymentSerializer, UpdateSponsorshipSerializer, UserRoleSerializer,GenderSerializer,BankDetailsSerializer,ClientBankDetailsSerializer,ClientSponsorProfle,ClientApplicationDocumentsSerializer, UserSerializer,LoginSerializer,SponsorshipSerializer,ClientSponsorshipSerializer,ChangePasswordSerializer,VerifyOTPSerializer,OTPSerializer,UpdatePasswordSerializer,SignupSerializer,ChargebeeUserSerializer
+from .serializers import ApplicationDetailsSerializer, ApplicationDocumentsSerializer, ChildStatusSerializer, ChildTypeSerializer, ClientGuardianProfle, ClientSponsorshipPaymentSerializer, ClientUserSerializer, DocumentTypeSerializer, GuardianProfileSerializer, RegisterSerializer,SponsorProfileSerializer,CountrySerializer,CountryStateSerializer,ApplicationProfileSerializer,EducationDetailsSerializer,ApplicationSerializer, SponsorshipPaymentSerializer, UpdateSponsorshipSerializer, UserRoleSerializer,GenderSerializer,BankDetailsSerializer,ClientBankDetailsSerializer,ClientSponsorProfle,ClientApplicationDocumentsSerializer, UserSerializer,LoginSerializer,SponsorshipSerializer,ClientSponsorshipSerializer,ChangePasswordSerializer,VerifyOTPSerializer,OTPSerializer,UpdatePasswordSerializer,SignupSerializer,ChargebeeUserSerializer
 
 from django.db import IntegrityError
 
@@ -620,6 +620,50 @@ class UpdateSponsorProfile(APIView):
                         # raise APIException
                         Response({"status":False,"error":{"message":str(e)}})
                 return Response({"status":False,"error":{"message":serializer.errors}})
+            else :
+                return Response({"status ":False,"error": "No Such Sponsor found with id :"+str(id)})
+        else :
+            return Response({"status":False,"error":"id field is required"})
+
+
+
+class UpdateGuardianProfile(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+    def post(self,request):
+        data = request.data
+        id = data.get("id")
+        if id:
+            if Guardian.objects.filter(id=id).exists():
+                instance = Guardian.objects.get(id = id)
+                data['created_by'] = instance.created_by
+                data['last_updated_by'] = request.user.name
+                user = data.pop('user')
+                data['user']= user.get('id')
+                userInstance = User.objects.get(pk =user.get('id'))
+                userInstance.email = user.get('email',userInstance.email)
+                userInstance.name = user.get('name',userInstance.name)
+                userInstance.last_updated_by = request.user.name
+                serializer = GuardianProfileSerializer(instance,data=data)
+                if serializer.is_valid() :
+                    try:
+                        userInstance.save()
+                        serializer.save()
+                        sponsor = Guardian.objects.get(pk = data.get('id'))
+                        res = ClientGuardianProfle(sponsor)
+                        logger.info(res.data)
+                        return Response({"status":True,"response":{"data":res.data}})
+                    except Exception as e:
+                        logger.exception(str(e))
+                        # raise APIException
+                        Response({"status":False,"error":{"message":str(e)}})
+                return Response({"status":False,"error":{"message":serializer.errors}})
+            else :
+                return Response({"status ":False,"error": "No Such Guardian found with id :"+str(id)})
+        else :
+            return Response({"status":False,"error":"id field is required"})
+
+
 
         
 class getSponsorProfileView(APIView):
@@ -633,6 +677,18 @@ class getSponsorProfileView(APIView):
             return Response({"status":True,"response":{"sponsor":serializer.data}})
         else :
             return Response({"status":False,"error":{"message":"Sponsor Details not found"}})
+
+class getGuardianProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+    def get(self,request):
+        if Guardian.objects.filter(user = request.GET.get("user_id"),is_active = True).exists():
+            guardian_profile = Guardian.objects.get(user = request.GET.get("user_id"))
+            logger.info(guardian_profile)
+            serializer = ClientGuardianProfle(guardian_profile)
+            return Response({"status":True,"response":{"sponsor":serializer.data}})
+        else :
+            return Response({"status":False,"error":{"message":"Guardian Details not found"}})
        
     
 
@@ -721,6 +777,7 @@ class getApplicationDetails(APIView,MyPaginator):
         region = self.request.GET.get("region",None)
         gender = self.request.GET.get("gender",None)
         child_type = self.request.GET.get("child_type",None)
+        guardian = self.request.GET.get("guardian_id",None)
         if application_id:
             filters["id"]=application_id
         if email:
@@ -737,6 +794,8 @@ class getApplicationDetails(APIView,MyPaginator):
             filters["gender"] = gender
         if child_type:
             filters["child_type"] = child_type
+        if guardian :
+            filters["guardian"] = guardian
         queryset = Application.objects.filter(**filters,is_active = True)
         page = self.paginate_queryset(queryset,request)
         serializer = ApplicationDetailsSerializer(page,many=True)
@@ -756,6 +815,7 @@ class SponsoredApplications(APIView,MyPaginator):
         region = self.request.GET.get("region",None)
         gender = self.request.GET.get("gender",None)
         child_type = self.request.GET.get("child_type",None)
+        guardian = self.request.GET.get("guardian_id",None)
         if email:
             filters["email"]=email
         if search:
@@ -770,6 +830,8 @@ class SponsoredApplications(APIView,MyPaginator):
             filters["gender"] = gender
         if child_type:
             filters["child_type"] = child_type
+        if guardian :
+            filters["guardian"] = guardian
         logger.info("Filters : "+str(filters))
         try:
             applicationIds = Sponsorship.objects.filter(sponsor_id = sponsor_id,is_active=True).values_list('application',flat=True)

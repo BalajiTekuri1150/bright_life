@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import BankDetails,Country,CountryState,EnumGender,EnumApplicationStatus,EnumChildType, EnumUserRole, OtpMaster,User,Sponsor,Application,ApplicationDocument,EnumDocumentType,Sponsorship,SponsorshipPayment
+from .models import BankDetails,Country,CountryState,EnumGender,EnumApplicationStatus,EnumChildType, EnumUserRole, Guardian, OtpMaster,User,Sponsor,Application,ApplicationDocument,EnumDocumentType,Sponsorship,SponsorshipPayment
 # Register your models here.
 
 
@@ -19,3 +19,4 @@ admin.site.register(Sponsorship)
 admin.site.register(EnumUserRole)
 admin.site.register(OtpMaster)
 admin.site.register(SponsorshipPayment)
+admin.site.register(Guardian)

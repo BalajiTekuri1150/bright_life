@@ -201,7 +201,7 @@ def get_profile_path(instance, filename):
 
 
 class Sponsor(models.Model):
-    user = models.OneToOneField(User,on_delete=models.CASCADE,related_name="user")
+    user = models.OneToOneField(User,on_delete=models.CASCADE,related_name="sponsor_user")
     mobile = PhoneNumberField(unique = True,null = True)
     organization = models.CharField(max_length=256,null=True)
     profile = models.ImageField(upload_to=get_profile_path,null = True)
@@ -219,6 +219,29 @@ class Sponsor(models.Model):
 
     def __str__(self):
         return str(self.id)
+
+
+class Guardian(models.Model):
+    user = models.OneToOneField(User,on_delete=models.CASCADE,related_name="guardian_user")
+    mobile = PhoneNumberField(unique = True,null = True)
+    organization = models.CharField(max_length=256,null=True)
+    profile = models.ImageField(upload_to=get_profile_path,null = True)
+    source = models.CharField(max_length=256,null=True)
+    address = models.CharField(max_length=256,null=True)
+    city = models.CharField(max_length=256,null=True)
+    state = models.CharField(max_length=256,null=True)
+    country = models.CharField(max_length=256,null=True)
+    postal_code = models.CharField(max_length=256,null=True)
+    is_active = models.BooleanField(default=True)
+    created_by = models.CharField(max_length=256,verbose_name="Created By")
+    created_date = models.DateTimeField(auto_now_add=True,verbose_name="Created Date")
+    last_updated_by = models.CharField(max_length=256,verbose_name="Last Updated By")
+    last_updated_date = models.DateTimeField(verbose_name="Updated Date",auto_now=True)
+
+    def __str__(self):
+        return str(self.id)
+
+
 
 def get_application_profile_path(instance, filename):
     return 'profile/application_{0}/{1}'.format(instance.id, filename)
@@ -240,13 +263,14 @@ class Application(models.Model):
     school_address = models.CharField(max_length = 256, null = True,blank=True)
     hobbies = models.TextField(max_length = 20,null = True,blank=True,default='')
     aspirations = models.TextField(null = True,blank=True,default='')
-    status = models.ForeignKey(EnumApplicationStatus,on_delete=models.CASCADE,null=True,default=2)
+    status = models.ForeignKey(EnumApplicationStatus,on_delete=models.CASCADE,null=True,default=2,related_name="application_status")
     achievements = models.TextField(null=True,blank=True,default='')
     about = models.TextField(null=True,blank=True)
     profession = models.CharField(max_length=256,null=True,blank=True)
     annual_income = models.FloatField(null=True,blank=True)
     family_members = models.PositiveIntegerField(blank=True,null=True)
     extra_allowance = models.FloatField(null=True,blank=True)
+    guardian = models.ForeignKey(Guardian,on_delete=models.CASCADE,null=True,related_name="guardian_id")
     is_active = models.BooleanField(default=True)
     created_by = models.CharField(max_length=256,verbose_name="Created By",default="user")
     created_date = models.DateTimeField(auto_now_add=True,verbose_name="Created Date")

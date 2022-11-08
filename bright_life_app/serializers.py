@@ -4,7 +4,7 @@ from django.forms import CharField
 from pkg_resources import require
 from rest_framework import serializers
 
-from .models import Application, Country, CountryState, ApplicationDocument, EnumApplicationStatus, EnumChildType, EnumDocumentType, EnumGender, EnumUserRole, Sponsor, Sponsorship, Sponsorship, SponsorshipPayment, User,BankDetails
+from .models import Application, Country, CountryState, ApplicationDocument, EnumApplicationStatus, EnumChildType, EnumDocumentType, EnumGender, EnumUserRole, Guardian, Sponsor, Sponsorship, Sponsorship, SponsorshipPayment, User,BankDetails
 
 from .payment_models import ChargebeeUser
 
@@ -57,6 +57,13 @@ class RegisterSerializer(serializers.ModelSerializer):
       except Exception as e:
         user.delete()
         return str(e)
+    elif user.role == "guardian":
+          try:
+            guardianProfile = Guardian.objects.create(user_id=user.id,created_by=user.name,last_updated_by=user.name)
+          except Exception as e:
+            logger.exception(str(e))
+            user.delete()
+            return str(e)
     return user
 
 # class SignupSerializer(serializers.Serializer):
@@ -138,6 +145,13 @@ class SignupSerializer(serializers.Serializer):
         if user.role == "sponsor":
           try:
             sponsorProfile = Sponsor.objects.create(user_id=user.id,created_by=user.name,last_updated_by=user.name)
+          except Exception as e:
+            logger.exception(str(e))
+            user.delete()
+            return str(e)
+        elif user.role == "guardian":
+          try:
+            guardianProfile = Guardian.objects.create(user_id=user.id,created_by=user.name,last_updated_by=user.name)
           except Exception as e:
             logger.exception(str(e))
             user.delete()
@@ -293,6 +307,13 @@ class SponsorProfileSerializer(serializers.ModelSerializer):
     #     identifier = defaults.pop('user_id')
     #     return Sponsor.objects.get_or_create(unique_field=identifier, defaults=defaults)
 
+
+class GuardianProfileSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = Guardian
+    fields = "__all__"
+
+
 class UserSerializer(serializers.ModelSerializer):
   class Meta:
     model = User
@@ -314,7 +335,18 @@ class ClientSponsorProfle(serializers.ModelSerializer):
 
   def to_representation(self, instance):
     data = super().to_representation(instance)
-    return {k: v for k, v in data.items() if v is not None and v != ""}    
+    return {k: v for k, v in data.items() if v is not None and v != ""}
+
+
+class ClientGuardianProfle(serializers.ModelSerializer):
+  user = ClientUserSerializer(read_only=True)
+  class Meta:
+    model = Guardian
+    fields = ['id','user','mobile','organization','profile','source','address','city','state','country','postal_code']
+
+  def to_representation(self, instance):
+    data = super().to_representation(instance)
+    return {k: v for k, v in data.items() if v is not None and v != ""}      
 
   
 
@@ -518,7 +550,7 @@ class ApplicationDetailsSerializer(serializers.ModelSerializer):
   status = ChildStatusSerializer(read_only = True)
   class Meta:
     model = Application
-    fields = ["id","name","birthday","email","mobile","profile","country","state","grade","school","school_address","hobbies","aspirations","achievements","about","profession","annual_income","family_members","extra_allowance","gender","child_type","status"]
+    fields = ["id","name","birthday","email","mobile","profile","country","state","grade","school","school_address","hobbies","aspirations","achievements","about","profession","annual_income","family_members","extra_allowance","gender","child_type","status","guardian_id"]
 
   def to_representation(self, instance):
     data = super().to_representation(instance)
