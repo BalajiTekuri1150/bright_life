@@ -92,7 +92,7 @@ class CreateUserView(APIView):
                 if serializer.is_valid():
                     user = serializer.create(request.data)
                     logger.info(user)
-                    data['message'] = "Successfully registered a new user"
+                    data['message'] = "Successfully registered"
                     data['email'] = user.email
                     data['name'] = user.name
                     data['id'] = user.id
@@ -188,7 +188,32 @@ class Login(APIView):
                     if user.is_active:
                         token, created = Token.objects.get_or_create(user=user)
                         userObj = ClientUserSerializer(user)
-                        return Response({'status':True,'response':{'user':userObj.data},'token': token.key},
+                        logger.info(userObj.data)
+                        role = userObj.data['role']
+                        user_id = userObj.data['id']
+                        if role == "sponsor" :
+                            if Sponsor.objects.filter(user = user_id,is_active = True).exists():
+                                logger.info("sponsor exists")
+                                sponsor_profile = Sponsor.objects.get(user = user_id)
+                                logger.info(sponsor_profile)
+                                serializer = ClientSponsorProfle(sponsor_profile)
+                                return Response({'status':True,'response':{'user':userObj.data,'sponsor' :serializer.data},'token': token.key},
+                                            status=status.HTTP_200_OK)
+                            else :
+                                return Response({'status':True,'response':{'user':userObj.data},'token': token.key},
+                                            status=status.HTTP_200_OK)
+                        elif role == "guardian" :
+                            if Guardian.objects.filter(user = user_id,is_active = True).exists():
+                                guardian_profile = Guardian.objects.get(user = user_id,)
+                                logger.info(guardian_profile)
+                                serializer = ClientGuardianProfle(guardian_profile)
+                                return Response({'status':True,'response':{'user':userObj.data,'guardian':serializer.data},'token': token.key},
+                                        status=status.HTTP_200_OK)
+                            else :
+                                return Response({'status':True,'response':{'user':userObj.data},'token': token.key},
+                                        status=status.HTTP_200_OK)
+                        else :
+                            return Response({'status':True,'response':{'user':userObj.data},'token': token.key},
                                         status=status.HTTP_200_OK)
                     else:
                         logger.debug("User account not active"+str(user))
@@ -686,7 +711,7 @@ class getGuardianProfileView(APIView):
             guardian_profile = Guardian.objects.get(user = request.GET.get("user_id"))
             logger.info(guardian_profile)
             serializer = ClientGuardianProfle(guardian_profile)
-            return Response({"status":True,"response":{"sponsor":serializer.data}})
+            return Response({"status":True,"response":{"guardian":serializer.data}})
         else :
             return Response({"status":False,"error":{"message":"Guardian Details not found"}})
        
