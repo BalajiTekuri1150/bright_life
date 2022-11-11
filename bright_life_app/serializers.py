@@ -483,7 +483,7 @@ class BankDetailsSerializer(serializers.ModelSerializer):
   class Meta:
     model = BankDetails
     # fields = "__all__"
-    fields = ['application_id','bank_name','state','postal_code','account_number','account_holder','branch','ifsc','created_by','last_updated_by']
+    fields = ['id','application_id','bank_name','state','postal_code','account_number','account_holder','branch','ifsc','created_by','last_updated_by']
 
 
 class ClientBankDetailSerializer(serializers.ModelSerializer):
