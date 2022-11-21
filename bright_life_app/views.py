@@ -114,10 +114,15 @@ class CheckEmail(APIView):
     permission_classes= [AllowAny]
     authentication_classes =[]
     def post(self,request):
-        if User.objects.filter(email = request.data.get("email",None)).exists():
-            return Response({"status":False,"error":"User already exists with the given email"})
-        else :
-            return Response({"status":True,"message":"No Account Exists with the given email"})
+        try :
+            if User.objects.filter(email = request.data.get("email",None)).exists():
+                return Response({"status":False,"error":"User already exists with the given email"})
+            else :
+                return Response({"status":True,"message":"No Account Exists with the given email"})
+        except Exception as e:
+            logger.exception(str(e))
+            # raise APIException
+            return Response({"status":False,"error":{"message":str(e)}})
 
 class OTPMandatorySignup(APIView):
     permission_classes= [AllowAny]
@@ -175,60 +180,63 @@ class Login(APIView):
 
     def post(self, request, format=None):
         serializer = self.serializer_class(data=request.data)
-
-        if serializer.is_valid():
-            email = serializer.data['email']
-            password = serializer.data['password']
-            if not User.objects.filter(email = email).exists():
-                logger.debug("Account doesn't exist with the given email :"+str(email))
-                return Response({"status":False,"message":"Account doesn't exist with the given email"})
-            else :
-                user = authenticate(email=email, password=password)
-                if user:
-                    if user.is_active:
-                        token, created = Token.objects.get_or_create(user=user)
-                        userObj = ClientUserSerializer(user)
-                        logger.info(userObj.data)
-                        role = userObj.data['role']
-                        user_id = userObj.data['id']
-                        if role == "sponsor" :
-                            if Sponsor.objects.filter(user = user_id,is_active = True).exists():
-                                logger.info("sponsor exists")
-                                sponsor_profile = Sponsor.objects.get(user = user_id)
-                                logger.info(sponsor_profile)
-                                serializer = ClientSponsorProfle(sponsor_profile)
-                                return Response({'status':True,'response':{'user':userObj.data,'sponsor' :serializer.data},'token': token.key},
+        try :
+            if serializer.is_valid():
+                email = serializer.data['email']
+                password = serializer.data['password']
+                if not User.objects.filter(email = email).exists():
+                    logger.debug("Account doesn't exist with the given email :"+str(email))
+                    return Response({"status":False,"message":"Account doesn't exist with the given email"})
+                else :
+                    user = authenticate(email=email, password=password)
+                    if user:
+                        if user.is_active:
+                            token, created = Token.objects.get_or_create(user=user)
+                            userObj = ClientUserSerializer(user)
+                            logger.info(userObj.data)
+                            role = userObj.data['role']
+                            user_id = userObj.data['id']
+                            if role == "sponsor" :
+                                if Sponsor.objects.filter(user = user_id,is_active = True).exists():
+                                    logger.info("sponsor exists")
+                                    sponsor_profile = Sponsor.objects.get(user = user_id)
+                                    logger.info(sponsor_profile)
+                                    serializer = ClientSponsorProfle(sponsor_profile)
+                                    return Response({'status':True,'response':{'user':userObj.data,'sponsor' :serializer.data},'token': token.key},
+                                                status=status.HTTP_200_OK)
+                                else :
+                                    return Response({'status':True,'response':{'user':userObj.data},'token': token.key},
+                                                status=status.HTTP_200_OK)
+                            elif role == "guardian" :
+                                if Guardian.objects.filter(user = user_id,is_active = True).exists():
+                                    guardian_profile = Guardian.objects.get(user = user_id,)
+                                    logger.info(guardian_profile)
+                                    serializer = ClientGuardianProfle(guardian_profile)
+                                    return Response({'status':True,'response':{'user':userObj.data,'guardian':serializer.data},'token': token.key},
+                                            status=status.HTTP_200_OK)
+                                else :
+                                    return Response({'status':True,'response':{'user':userObj.data},'token': token.key},
                                             status=status.HTTP_200_OK)
                             else :
                                 return Response({'status':True,'response':{'user':userObj.data},'token': token.key},
                                             status=status.HTTP_200_OK)
-                        elif role == "guardian" :
-                            if Guardian.objects.filter(user = user_id,is_active = True).exists():
-                                guardian_profile = Guardian.objects.get(user = user_id,)
-                                logger.info(guardian_profile)
-                                serializer = ClientGuardianProfle(guardian_profile)
-                                return Response({'status':True,'response':{'user':userObj.data,'guardian':serializer.data},'token': token.key},
-                                        status=status.HTTP_200_OK)
-                            else :
-                                return Response({'status':True,'response':{'user':userObj.data},'token': token.key},
-                                        status=status.HTTP_200_OK)
-                        else :
-                            return Response({'status':True,'response':{'user':userObj.data},'token': token.key},
-                                        status=status.HTTP_200_OK)
+                        else:
+                            logger.debug("User account not active"+str(user))
+                            content = {'status':False,"error":{'message': 'User account not active.'}}
+                            return Response(content,
+                                            status=status.HTTP_401_UNAUTHORIZED)
                     else:
-                        logger.debug("User account not active"+str(user))
-                        content = {'status':False,"error":{'message': 'User account not active.'}}
-                        return Response(content,
-                                        status=status.HTTP_401_UNAUTHORIZED)
-                else:
-                    logger.debug("Invalid Password "+str(serializer.data))
-                    content = {'status':False,"error":{'message':'Invalid Password'}}
-                    return Response(content, status=status.HTTP_401_UNAUTHORIZED)
-
-        else:
-            logger.exception(serializer.errors)
-            return Response({"status":False,"error":{"message":serializer.errors}},
-                            status=status.HTTP_400_BAD_REQUEST)
+                        logger.debug("Invalid Password "+str(serializer.data))
+                        content = {'status':False,"error":{'message':'Invalid Password'}}
+                        return Response(content, status=status.HTTP_401_UNAUTHORIZED)
+            else:
+                logger.exception(serializer.errors)
+                return Response({"status":False,"error":{"message":serializer.errors}},
+                                status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.exception(str(e))
+            # raise APIException
+            return Response({"status":False,"error":{"message":str(e)}})
 
 class ChangePassword(APIView):
     permission_classes = [IsAuthenticated]
@@ -237,14 +245,19 @@ class ChangePassword(APIView):
     def post(self,request):
         data = self.request.data
         logger.info("ChangePassword initiated")
-        serializer = ChangePasswordSerializer(data = data,context={'request': request})
-        if serializer.is_valid():
-            serializer.save()
-            logger.info("Password Updated Successfully")
-            return Response({"status":True,"response":{"message":"Password Updated Successfully"}})
-        else :
-            logger.debug(serializer.errors)
-            return Response({"status":False,"error":{"message":serializer.errors}})
+        try :
+            serializer = ChangePasswordSerializer(data = data,context={'request': request})
+            if serializer.is_valid():
+                serializer.save()
+                logger.info("Password Updated Successfully")
+                return Response({"status":True,"response":{"message":"Password Updated Successfully"}})
+            else :
+                logger.debug(serializer.errors)
+                return Response({"status":False,"error":{"message":serializer.errors}})
+        except Exception as e:
+            logger.exception(str(e))
+            # raise APIException
+            return Response({"status":False,"error":{"message":str(e)}})
 
 
 
@@ -265,30 +278,35 @@ def sendOTP(email,context,user):
         subject = "Verify your Account"
         data = {'subject':subject,'email_body': message, 'to_email': email}
     # user = User.objects.filter(email = email)
-    status = EmailSender.send_email(data)
-    logger.info("Email Status "+str(status))
-    if status > 0:
-        expiry_time = datetime.now() + timedelta(minutes = 20)
-        current_time = datetime.now()
-        oldDetails = OtpMaster.objects.filter(target = email,context = context,expiry_date__gte = current_time).exclude(is_verified = True).first()
-        logger.info("oldDetails"+str(oldDetails))
-        if oldDetails:
-            logger.info("otp :"+str(otp))
-            maxAttempts = 20
-            if (oldDetails.issued_count < maxAttempts):
-                OtpMaster.objects.filter(id = oldDetails.id).update(issued_date = current_time, expiry_date=expiry_time,otp = otp,issued_count =oldDetails.issued_count+1)
-                return oldDetails.id
+    try :
+        status = EmailSender.send_email(data)
+        logger.info("Email Status "+str(status))
+        if status > 0:
+            expiry_time = datetime.now() + timedelta(minutes = 20)
+            current_time = datetime.now()
+            oldDetails = OtpMaster.objects.filter(target = email,context = context,expiry_date__gte = current_time).exclude(is_verified = True).first()
+            logger.info("oldDetails"+str(oldDetails))
+            if oldDetails:
+                logger.info("otp :"+str(otp))
+                maxAttempts = 20
+                if (oldDetails.issued_count < maxAttempts):
+                    OtpMaster.objects.filter(id = oldDetails.id).update(issued_date = current_time, expiry_date=expiry_time,otp = otp,issued_count =oldDetails.issued_count+1)
+                    return oldDetails.id
+                else :
+                    logger.info("OTP Resend max attempts limit exceeded : "+str(maxAttempts))
+                    return None
             else :
-                logger.info("OTP Resend max attempts limit exceeded : "+str(maxAttempts))
-                return None
+                logger.info(otp)
+                OtpMaster.objects.create(target = email,target_type = "email",context= context,otp = otp,expiry_date = expiry_time) 
+                logger.info("Referrence Id : "+str(OtpMaster.objects.last().id))
+            return OtpMaster.objects.last().id
         else :
-            logger.info(otp)
-            OtpMaster.objects.create(target = email,target_type = "email",context= context,otp = otp,expiry_date = expiry_time) 
-            logger.info("Referrence Id : "+str(OtpMaster.objects.last().id))
-        return OtpMaster.objects.last().id
-    else :
-        logger.info("Unable to send email ")
-        return False
+            logger.info("Unable to send email ")
+            return False
+    except Exception as e:
+        logger.exception(str(e))
+        # raise APIException
+        return Response({"status":False,"error":{"message":str(e)}})
 
 def sendSignupOTP(email,context):
     otp = generateOTP()
@@ -297,116 +315,131 @@ def sendSignupOTP(email,context):
     subject = "Verify your Account"
     data = {'subject':subject,'email_body': message, 'to_email': email}
     logger.info("Signup OTP request :"+str(data))
-    status = EmailSender.send_email(data)
-    logger.info("Email sent status:"+str(status))
-    if status > 0:
-        expiry_time = timezone.now() + timedelta(minutes = 20)
-        current_time = timezone.now()
-        logger.info("current_time :"+str(current_time))
-        logger.info("expiry_time :"+str(expiry_time))
-        oldDetails = OtpMaster.objects.filter(target = email,context = context,expiry_date__gte = current_time).exclude(is_verified = True).last()
-        if oldDetails:
-            logger.info("Old Details :"+str(oldDetails))
-            logger.info(oldDetails.id)
-            maxAttempts = 100
-            if (oldDetails.issued_count < maxAttempts):
-                OtpMaster.objects.filter(id = oldDetails.id).update(issued_date = current_time, expiry_date=expiry_time,otp = otp,issued_count =oldDetails.issued_count+1)
-                return oldDetails.id
+    try :
+        status = EmailSender.send_email(data)
+        logger.info("Email sent status:"+str(status))
+        if status > 0:
+            expiry_time = timezone.now() + timedelta(minutes = 20)
+            current_time = timezone.now()
+            logger.info("current_time :"+str(current_time))
+            logger.info("expiry_time :"+str(expiry_time))
+            oldDetails = OtpMaster.objects.filter(target = email,context = context,expiry_date__gte = current_time).exclude(is_verified = True).last()
+            if oldDetails:
+                logger.info("Old Details :"+str(oldDetails))
+                logger.info(oldDetails.id)
+                maxAttempts = 100
+                if (oldDetails.issued_count < maxAttempts):
+                    OtpMaster.objects.filter(id = oldDetails.id).update(issued_date = current_time, expiry_date=expiry_time,otp = otp,issued_count =oldDetails.issued_count+1)
+                    return oldDetails.id
+                else :
+                    logger.info("Signup resend OTP max limit exceeded :"+maxAttempts)
+                    return None
             else :
-                logger.info("Signup resend OTP max limit exceeded :"+maxAttempts)
-                return None
+                logger.info("otp :"+str(otp))
+                logger.info("otp :"+str(otp))
+                OtpMaster.objects.create(target = email,target_type = "email",context= context,otp = otp,expiry_date = expiry_time) 
+                logger.info(OtpMaster.objects.last().id)
+                logger.info(OtpMaster.objects.last().id)
+            return OtpMaster.objects.last().id
         else :
-            logger.info("otp :"+str(otp))
-            logger.info("otp :"+str(otp))
-            OtpMaster.objects.create(target = email,target_type = "email",context= context,otp = otp,expiry_date = expiry_time) 
-            logger.info(OtpMaster.objects.last().id)
-            logger.info(OtpMaster.objects.last().id)
-        return OtpMaster.objects.last().id
-    else :
-        logger.debug("Error while sending signup otp")
-        return False
+            logger.debug("Error while sending signup otp")
+            return False
+    except Exception as e:
+        logger.exception(str(e))
+        # raise APIException
+        return Response({"status":False,"error":{"message":str(e)}})
 
 class GetOTP(APIView):
     permission_classes = (AllowAny,)
     def post(self,request):
         logger.info("get OTP request : "+str(request.data))
         serializer = OTPSerializer(data = request.data)
-        if serializer.is_valid():
-            email = serializer.data['email']
-            context = serializer.data['context']
-            if User.objects.filter(email=email).exists() :
-                user = User.objects.get(email=email)
-                if (context == "signup" or context == "forgot_password"):
-                    try:
-                        referrence_id = sendOTP(email,context,user)
-                        if referrence_id:
-                            return Response({"status":True,"message":"OTP Sent Successfully","referrence_id":referrence_id})
-                        else :
-                            return Response({"status":False,"message":"OTP Limited exceeded"},status =status.HTTP_429_TOO_MANY_REQUESTS)
-                    except Exception as e:
-                        logger.exception(str(e))
-                        # raise APIException
-                        return Response({"status":False,"message":str(e)},status = status.HTTP_500_INTERNAL_SERVER_ERROR)
+        try :
+            if serializer.is_valid():
+                email = serializer.data['email']
+                context = serializer.data['context']
+                if User.objects.filter(email=email).exists() :
+                    user = User.objects.get(email=email)
+                    if (context == "signup" or context == "forgot_password"):
+                        try:
+                            referrence_id = sendOTP(email,context,user)
+                            if referrence_id:
+                                return Response({"status":True,"message":"OTP Sent Successfully","referrence_id":referrence_id})
+                            else :
+                                return Response({"status":False,"message":"OTP Limited exceeded"},status =status.HTTP_429_TOO_MANY_REQUESTS)
+                        except Exception as e:
+                            logger.exception(str(e))
+                            # raise APIException
+                            return Response({"status":False,"message":str(e)},status = status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    else :
+                        logger.debug("Invalid Context :"+context)
+                        return Response({"status":False,"message":"Invalid context"})
                 else :
-                    logger.debug("Invalid Context :"+context)
-                    return Response({"status":False,"message":"Invalid context"})
+                    logger.info("Invalid Account :"+email)
+                    return Response({"status":False,"message":"Invalid Account"})
             else :
-                logger.info("Invalid Account :"+email)
-                return Response({"status":False,"message":"Invalid Account"})
-        else :
+                logger.exception(str(e))
+                return Response({"status":False,"message":serializer.errors})
+        except Exception as e:
             logger.exception(str(e))
-            return Response({"status":False,"message":serializer.errors})
+            # raise APIException
+            return Response({"status":False,"error":{"message":str(e)}})
 
 class GetOTPV2(APIView):
     permission_classes = (AllowAny,)
     def post(self,request):
         serializer = OTPSerializer(data = request.data)
-        if serializer.is_valid():
-            email = serializer.data['email']
-            context = serializer.data['context']
-            if context == "signup":
-                logger.info("Email :"+email)
-                logger.info(email)
-                if not User.objects.filter(email = email).exists():
-                    try:
-                        referrence_id = sendSignupOTP(email,context)
-                        if referrence_id:
-                            logger.info("referrence id :"+str(referrence_id))
-                            return Response({"status":True,"response":{'message':"OTP Sent Successfully","referrence_id":referrence_id}})
-                        else :
-                            logger.debug("Error while sending OTP")
-                            return Response({"status":False,"response":{"message":"Error while sending OTP"}},status =status.HTTP_429_TOO_MANY_REQUESTS)
-                    except Exception as e:
-                        logger.exception(str(e))
-                        logger.info(e)
-                        # raise APIException
-                        return Response({"status":False,"message":str(e)},status = status.HTTP_500_INTERNAL_SERVER_ERROR)
+        try :
+            if serializer.is_valid():
+                email = serializer.data['email']
+                context = serializer.data['context']
+                if context == "signup":
+                    logger.info("Email :"+email)
+                    logger.info(email)
+                    if not User.objects.filter(email = email).exists():
+                        try:
+                            referrence_id = sendSignupOTP(email,context)
+                            if referrence_id:
+                                logger.info("referrence id :"+str(referrence_id))
+                                return Response({"status":True,"response":{'message':"OTP Sent Successfully","referrence_id":referrence_id}})
+                            else :
+                                logger.debug("Error while sending OTP")
+                                return Response({"status":False,"response":{"message":"Error while sending OTP"}},status =status.HTTP_429_TOO_MANY_REQUESTS)
+                        except Exception as e:
+                            logger.exception(str(e))
+                            logger.info(e)
+                            # raise APIException
+                            return Response({"status":False,"message":str(e)},status = status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    else :
+                        return Response({"status":False,"error":{"message":"User already Exists"}})
+                elif context == "forgot_password" :
+                    if User.objects.filter(email=email).exists() :
+                        user = User.objects.get(email=email)
+                        try:
+                            referrence_id = sendOTP(email,context,user)
+                            logger.info(referrence_id)
+                            if referrence_id:
+                                logger.info("Reference id "+str(referrence_id))
+                                return Response({"status":True,"response":{"message":"OTP Sent Successfully","referrence_id":referrence_id}})
+                            else :
+                                return Response({"status":False,"error":{"message":"OTP Limited exceeded"}},status =status.HTTP_429_TOO_MANY_REQUESTS)
+                        except Exception as e:
+                            logger.exception(str(e))
+                            raise APIException
+                            # return Response({"status":False,"message":str(e)},status = status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    else :
+                        logger.debug("Invalid email :"+email)
+                        return Response({"status":False,"error":{"message":"Invalid Account"}})
                 else :
-                    return Response({"status":False,"error":{"message":"User already Exists"}})
-            elif context == "forgot_password" :
-                if User.objects.filter(email=email).exists() :
-                    user = User.objects.get(email=email)
-                    try:
-                        referrence_id = sendOTP(email,context,user)
-                        logger.info(referrence_id)
-                        if referrence_id:
-                            logger.info("Reference id "+str(referrence_id))
-                            return Response({"status":True,"response":{"message":"OTP Sent Successfully","referrence_id":referrence_id}})
-                        else :
-                            return Response({"status":False,"error":{"message":"OTP Limited exceeded"}},status =status.HTTP_429_TOO_MANY_REQUESTS)
-                    except Exception as e:
-                        logger.exception(str(e))
-                        raise APIException
-                        # return Response({"status":False,"message":str(e)},status = status.HTTP_500_INTERNAL_SERVER_ERROR)
-                else :
-                    logger.debug("Invalid email :"+email)
-                    return Response({"status":False,"error":{"message":"Invalid Account"}})
+                    logger.debug("Invalid Context")
+                    return Response({"status":False,"error":{"message":"invalid context"}})
             else :
-                logger.debug("Invalid Context")
-                return Response({"status":False,"error":{"message":"invalid context"}})
-        else :
+                logger.exception(str(e))
+                return Response({"status":False,"error":{"message":serializer.errors}})
+        except Exception as e:
             logger.exception(str(e))
-            return Response({"status":False,"error":{"message":serializer.errors}})
+            # raise APIException
+            return Response({"status":False,"error":{"message":str(e)}})
 
 
 class ResendOTP(APIView):
@@ -421,82 +454,28 @@ class ResendOTP(APIView):
         logger.info("expiry time :"+str(expiry_time))
         referrence_id = request.data["referrence_id"]
         OTPDetails = OtpMaster.objects.get(id = referrence_id,expiry_date__gte = current_time)
-        if OTPDetails:
-            email = OTPDetails.target
-            if OTPDetails.is_verified:
-                logger.debug("Invalid referrence id for resend :"+referrence_id)
-                return Response({"status":False,"error":{"message ":"ErrorOTPInvalidReferenceForResend"}})
-            elif OTPDetails.expiry_date < current_time :
-                otp = generateOTP()
-                message = "Use below OTP to reset you BrightLife Account Password \n OTP :"+otp
-                subject = "Reset your BrightLife Account Password"
-                data = {'subject':subject,'email_body': message, 'to_email': OTPDetails.target}
-                status =EmailSender.send_email(data)
-                if status > 0:
-                    OtpMaster.objects.get(id = referrence_id).update(expiry_date=expiry_time,otp = otp,issued_count = OTPDetails.issued_count+1)
-                    logger.info("referrence id "+str(referrence_id))
-                    return Response({"status":True,"response":{"message":"OTP sent successfully","reference_id":referrence_id}})
-                else :
-                    return Response({"status":False,"error":{"message":"error while sending email"}})
-            else :
-                otp= generateOTP()
-                logger.info("context : "+OTPDetails.context)
-                logger.info(OTPDetails.context)
-                if OTPDetails.context == "signup":
-                    message = "Dear User \n Use below OTP to verify your account \n OTP :"+str(otp)
-                    subject = "Verify your Account"
-                    data = {'subject':subject,'email_body': message, 'to_email': email}
-                else :
-                    # user = User.objects.get(id = request.user.id)
-                    # logger.info("User : "+str(user))
-                    # print(user)
-                    # message = "Hello "+user.name+"\n Use below OTP to reset you BrightLife Account Password \n OTP :"+otp
+        try :
+            if OTPDetails:
+                email = OTPDetails.target
+                if OTPDetails.is_verified:
+                    logger.debug("Invalid referrence id for resend :"+referrence_id)
+                    return Response({"status":False,"error":{"message ":"ErrorOTPInvalidReferenceForResend"}})
+                elif OTPDetails.expiry_date < current_time :
+                    otp = generateOTP()
                     message = "Use below OTP to reset you BrightLife Account Password \n OTP :"+otp
                     subject = "Reset your BrightLife Account Password"
                     data = {'subject':subject,'email_body': message, 'to_email': OTPDetails.target}
-                status =EmailSender.send_email(data)
-                if status > 0:
-                    OtpMaster.objects.filter(id = referrence_id).update(expiry_date=expiry_time,otp = otp,issued_count =OTPDetails.issued_count+1)
-                    logger.info("referrence id : "+str(referrence_id))
-                    return Response({"status":True,"response":{"message":"OTP Sent Successfully","referrence_id":referrence_id}})
+                    status =EmailSender.send_email(data)
+                    if status > 0:
+                        OtpMaster.objects.get(id = referrence_id).update(expiry_date=expiry_time,otp = otp,issued_count = OTPDetails.issued_count+1)
+                        logger.info("referrence id "+str(referrence_id))
+                        return Response({"status":True,"response":{"message":"OTP sent successfully","reference_id":referrence_id}})
+                    else :
+                        return Response({"status":False,"error":{"message":"error while sending email"}})
                 else :
-                    return Response({"status":False,"error":{"message":"error while sending email"}})
-                
-        else :
-            logger.error("Invalid referrence for resend")
-            return Response({"status":False,"message ":"ErrorOTPInvalidReferenceForResend"})
-
-
-
-class ResendOTPV2(APIView):
-    permission_classes = [AllowAny,]
-
-    def post(self,request):
-        current_time = timezone.now()
-        expiry_time = timezone.now()+timedelta(minutes = 15)
-        referrence_id = request.data.get("referrence_id")
-        if referrence_id:
-            logger.info("current time : "+str(current_time))
-            logger.info("expiry_time : "+str(expiry_time))
-            logger.info("referrence id :"+str(referrence_id))
-            OTPDetails = OtpMaster.objects.filter(pk = referrence_id,expiry_date__gte = current_time).last()
-            if OTPDetails:
-                email = OTPDetails.target
-                logger.info("user id : "+str(OTPDetails.user_id))
-                logger.info("email : "+str(email))
-                logger.info(OTPDetails.user_id)
-                logger.info(email)
-                logger.info(OTPDetails.is_verified)
-                if OTPDetails.is_verified:
-                    logger.info("Invalid referrence for resend OTP")
-                    return Response({"status":False,"error":{"message ":"ErrorOTPInvalidReferenceForResend"}})
-                elif not OTPDetails.issued_count < 20:
-                    logger.info("Error OTP issued count limit exceeded")
-                    return Response({"status" :False,"error":{"message":"ErrorOTPLimitExceeded"}})
-                # elif OTPDetails.expiry_date < current_time :
-                else :
-                    otp = generateOTP()
+                    otp= generateOTP()
                     logger.info("context : "+OTPDetails.context)
+                    logger.info(OTPDetails.context)
                     if OTPDetails.context == "signup":
                         message = "Dear User \n Use below OTP to verify your account \n OTP :"+str(otp)
                         subject = "Verify your Account"
@@ -511,17 +490,81 @@ class ResendOTPV2(APIView):
                         data = {'subject':subject,'email_body': message, 'to_email': OTPDetails.target}
                     status =EmailSender.send_email(data)
                     if status > 0:
-                        OtpMaster.objects.filter(id = referrence_id).update(expiry_date=expiry_time,otp = otp,issued_count = OTPDetails.issued_count+1)
+                        OtpMaster.objects.filter(id = referrence_id).update(expiry_date=expiry_time,otp = otp,issued_count =OTPDetails.issued_count+1)
                         logger.info("referrence id : "+str(referrence_id))
                         return Response({"status":True,"response":{"message":"OTP Sent Successfully","referrence_id":referrence_id}})
                     else :
-                        return Response({"status":False,"error":{"message":"Error while sending email"}})
+                        return Response({"status":False,"error":{"message":"error while sending email"}})
+                    
             else :
-                logger.info("ErrorOTPInvalidReferenceForResend OTP")
-                return Response({"status":False,"error":{"message ":"ErrorOTPInvalidReferenceForResend"}})
-        else :
-            logger.info("Missing field referrence_id")
-            return Response({"status":False,"error":{"message ":"missing field referrence_id","details":request.data}})
+                logger.error("Invalid referrence for resend")
+                return Response({"status":False,"message ":"ErrorOTPInvalidReferenceForResend"})
+        except Exception as e:
+            logger.exception(str(e))
+            # raise APIException
+            return Response({"status":False,"error":{"message":str(e)}})
+
+
+
+class ResendOTPV2(APIView):
+    permission_classes = [AllowAny,]
+
+    def post(self,request):
+        current_time = timezone.now()
+        expiry_time = timezone.now()+timedelta(minutes = 15)
+        referrence_id = request.data.get("referrence_id")
+        try :
+            if referrence_id:
+                logger.info("current time : "+str(current_time))
+                logger.info("expiry_time : "+str(expiry_time))
+                logger.info("referrence id :"+str(referrence_id))
+                OTPDetails = OtpMaster.objects.filter(pk = referrence_id,expiry_date__gte = current_time).last()
+                if OTPDetails:
+                    email = OTPDetails.target
+                    logger.info("user id : "+str(OTPDetails.user_id))
+                    logger.info("email : "+str(email))
+                    logger.info(OTPDetails.user_id)
+                    logger.info(email)
+                    logger.info(OTPDetails.is_verified)
+                    if OTPDetails.is_verified:
+                        logger.info("Invalid referrence for resend OTP")
+                        return Response({"status":False,"error":{"message ":"ErrorOTPInvalidReferenceForResend"}})
+                    elif not OTPDetails.issued_count < 20:
+                        logger.info("Error OTP issued count limit exceeded")
+                        return Response({"status" :False,"error":{"message":"ErrorOTPLimitExceeded"}})
+                    # elif OTPDetails.expiry_date < current_time :
+                    else :
+                        otp = generateOTP()
+                        logger.info("context : "+OTPDetails.context)
+                        if OTPDetails.context == "signup":
+                            message = "Dear User \n Use below OTP to verify your account \n OTP :"+str(otp)
+                            subject = "Verify your Account"
+                            data = {'subject':subject,'email_body': message, 'to_email': email}
+                        else :
+                            # user = User.objects.get(id = request.user.id)
+                            # logger.info("User : "+str(user))
+                            # print(user)
+                            # message = "Hello "+user.name+"\n Use below OTP to reset you BrightLife Account Password \n OTP :"+otp
+                            message = "Use below OTP to reset you BrightLife Account Password \n OTP :"+otp
+                            subject = "Reset your BrightLife Account Password"
+                            data = {'subject':subject,'email_body': message, 'to_email': OTPDetails.target}
+                        status =EmailSender.send_email(data)
+                        if status > 0:
+                            OtpMaster.objects.filter(id = referrence_id).update(expiry_date=expiry_time,otp = otp,issued_count = OTPDetails.issued_count+1)
+                            logger.info("referrence id : "+str(referrence_id))
+                            return Response({"status":True,"response":{"message":"OTP Sent Successfully","referrence_id":referrence_id}})
+                        else :
+                            return Response({"status":False,"error":{"message":"Error while sending email"}})
+                else :
+                    logger.info("ErrorOTPInvalidReferenceForResend OTP")
+                    return Response({"status":False,"error":{"message ":"ErrorOTPInvalidReferenceForResend"}})
+            else :
+                logger.info("Missing field referrence_id")
+                return Response({"status":False,"error":{"message ":"missing field referrence_id","details":request.data}})
+        except Exception as e:
+            logger.exception(str(e))
+            # raise APIException
+            return Response({"status":False,"error":{"message":str(e)}})
 
 
 def verifyUpdateOTP(target,target_type,otp,context):
@@ -547,30 +590,35 @@ class UpdatePassword(APIView):
 
     def post(self,request):
         serializer = UpdatePasswordSerializer(data = request.data)
-        if serializer.is_valid():
-            email = serializer.data['email']
-            otp = serializer.data['otp']
-            password = request.data['password']
-            context = 'forgot_password'
-            if email:
-                target = email
-                target_type = "email"
-                user = User.objects.get(email = target)
-            else :
-                target = "mobile"
-                target_type = "mobile"
-                user = User.objects.get(mobile = target)
-            if verifyUpdateOTP(target,target_type,otp,context):
-                user.set_password(password)
-                user.save()
-                logger.info("Password updated successfully")
-                return Response({"status":True,"response":{"message":"Password Updated Successfully"}})
-            else :
-                return Response({"status":False,"error":{"message":"Invalid OTP or OTP expired"}})
+        try :
+            if serializer.is_valid():
+                email = serializer.data['email']
+                otp = serializer.data['otp']
+                password = request.data['password']
+                context = 'forgot_password'
+                if email:
+                    target = email
+                    target_type = "email"
+                    user = User.objects.get(email = target)
+                else :
+                    target = "mobile"
+                    target_type = "mobile"
+                    user = User.objects.get(mobile = target)
+                if verifyUpdateOTP(target,target_type,otp,context):
+                    user.set_password(password)
+                    user.save()
+                    logger.info("Password updated successfully")
+                    return Response({"status":True,"response":{"message":"Password Updated Successfully"}})
+                else :
+                    return Response({"status":False,"error":{"message":"Invalid OTP or OTP expired"}})
 
-        else :
-            logger.debug(str(serializer.errors))
-            return Response({"status":False,"error":{"message" :serializer.errors}})
+            else :
+                logger.debug(str(serializer.errors))
+                return Response({"status":False,"error":{"message" :serializer.errors}})
+        except Exception as e:
+            logger.exception(str(e))
+            # raise APIException
+            return Response({"status":False,"error":{"message":str(e)}})
 
 
 
@@ -620,35 +668,79 @@ class UpdateSponsorProfile(APIView):
     def post(self,request):
         data = request.data
         id = data.get("id")
-        if id:
-            if Sponsor.objects.filter(id=id).exists():
-                instance = Sponsor.objects.get(id = id)
-                data['created_by'] = instance.created_by
-                data['last_updated_by'] = request.user.name
-                user = data.pop('user')
-                data['user']= user.get('id')
-                userInstance = User.objects.get(pk =user.get('id'))
-                userInstance.email = user.get('email',userInstance.email)
-                userInstance.name = user.get('name',userInstance.name)
-                userInstance.last_updated_by = request.user.name
-                serializer = SponsorProfileSerializer(instance,data=data)
-                if serializer.is_valid() :
-                    try:
-                        userInstance.save()
-                        serializer.save()
-                        sponsor = Sponsor.objects.get(pk = data.get('id'))
-                        res = ClientSponsorProfle(sponsor)
-                        logger.info(res.data)
-                        return Response({"status":True,"response":{"data":res.data}})
-                    except Exception as e:
-                        logger.exception(str(e))
-                        # raise APIException
-                        Response({"status":False,"error":{"message":str(e)}})
-                return Response({"status":False,"error":{"message":serializer.errors}})
+        try:
+            if id:
+                if Sponsor.objects.filter(id=id).exists():
+                    instance = Sponsor.objects.get(id = id)
+                    data['created_by'] = instance.created_by
+                    data['last_updated_by'] = request.user.name
+                    user = data.pop('user')
+                    data['user']= user.get('id')
+                    userInstance = User.objects.get(pk =user.get('id'))
+                    userInstance.email = user.get('email',userInstance.email)
+                    userInstance.name = user.get('name',userInstance.name)
+                    userInstance.last_updated_by = request.user.name
+                    serializer = SponsorProfileSerializer(instance,data=data)
+                    if serializer.is_valid() :
+                        try:
+                            userInstance.save()
+                            serializer.save()
+                            sponsor = Sponsor.objects.get(pk = data.get('id'))
+                            res = ClientSponsorProfle(sponsor)
+                            logger.info(res.data)
+                            return Response({"status":True,"response":{"data":res.data}})
+                        except Exception as e:
+                            logger.exception(str(e))
+                            # raise APIException
+                            Response({"status":False,"error":{"message":str(e)}})
+                    return Response({"status":False,"error":{"message":serializer.errors}})
+                else :
+                    return Response({"status ":False,"error": "No Such Sponsor found with id :"+str(id)})
             else :
-                return Response({"status ":False,"error": "No Such Sponsor found with id :"+str(id)})
-        else :
-            return Response({"status":False,"error":"id field is required"})
+                return Response({"status":False,"error":"id field is required"})
+        except Exception as e:
+            logger.exception(str(e))
+            # raise APIException
+            Response({"status":False,"error":{"message":str(e)}})
+
+
+class UpdateSponsorDetails(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+    def post(self,request):
+        try:
+            data = request.data
+            id = data.get("id")
+            if id:
+                if Sponsor.objects.filter(id=id).exists():
+                    instance = Sponsor.objects.get(id = id)
+                    sponsorData = ClientSponsorProfle(instance)
+                    data['created_by'] = instance.created_by
+                    data['last_updated_by'] = request.user.name
+                    logger.info("instance"+str(sponsorData.data))
+                    logger.info(sponsorData.data['user']['id'])
+                    data['user'] = sponsorData.data['user']['id']
+                    serializer = SponsorProfileSerializer(instance,data=data)
+                    if serializer.is_valid() :
+                        try:
+                            serializer.save()
+                            sponsor = Sponsor.objects.get(pk = data.get('id'))
+                            res = ClientSponsorProfle(sponsor)
+                            logger.info(res.data)
+                            return Response({"status":True,"response":{"data":res.data}})
+                        except Exception as e:
+                            logger.exception(str(e))
+                            # raise APIException
+                            Response({"status":False,"error":{"message":str(e)}})
+                    return Response({"status":False,"error":{"message":serializer.errors}})
+                else :
+                    return Response({"status ":False,"error": "No Such Sponsor found with id :"+str(id)})
+            else :
+                return Response({"status":False,"error":"id field is required"})
+        except Exception as e:
+            logger.exception(str(e))
+            # raise APIException
+            Response({"status":False,"error":{"message":str(e)}})
 
 
 
@@ -658,35 +750,40 @@ class UpdateGuardianProfile(APIView):
     def post(self,request):
         data = request.data
         id = data.get("id")
-        if id:
-            if Guardian.objects.filter(id=id).exists():
-                instance = Guardian.objects.get(id = id)
-                data['created_by'] = instance.created_by
-                data['last_updated_by'] = request.user.name
-                user = data.pop('user')
-                data['user']= user.get('id')
-                userInstance = User.objects.get(pk =user.get('id'))
-                userInstance.email = user.get('email',userInstance.email)
-                userInstance.name = user.get('name',userInstance.name)
-                userInstance.last_updated_by = request.user.name
-                serializer = GuardianProfileSerializer(instance,data=data)
-                if serializer.is_valid() :
-                    try:
-                        userInstance.save()
-                        serializer.save()
-                        sponsor = Guardian.objects.get(pk = data.get('id'))
-                        res = ClientGuardianProfle(sponsor)
-                        logger.info(res.data)
-                        return Response({"status":True,"response":{"data":res.data}})
-                    except Exception as e:
-                        logger.exception(str(e))
-                        # raise APIException
-                        Response({"status":False,"error":{"message":str(e)}})
-                return Response({"status":False,"error":{"message":serializer.errors}})
+        try :
+            if id:
+                if Guardian.objects.filter(id=id).exists():
+                    instance = Guardian.objects.get(id = id)
+                    data['created_by'] = instance.created_by
+                    data['last_updated_by'] = request.user.name
+                    user = data.pop('user')
+                    data['user']= user.get('id')
+                    userInstance = User.objects.get(pk =user.get('id'))
+                    userInstance.email = user.get('email',userInstance.email)
+                    userInstance.name = user.get('name',userInstance.name)
+                    userInstance.last_updated_by = request.user.name
+                    serializer = GuardianProfileSerializer(instance,data=data)
+                    if serializer.is_valid() :
+                        try:
+                            userInstance.save()
+                            serializer.save()
+                            sponsor = Guardian.objects.get(pk = data.get('id'))
+                            res = ClientGuardianProfle(sponsor)
+                            logger.info(res.data)
+                            return Response({"status":True,"response":{"data":res.data}})
+                        except Exception as e:
+                            logger.exception(str(e))
+                            # raise APIException
+                            Response({"status":False,"error":{"message":str(e)}})
+                    return Response({"status":False,"error":{"message":serializer.errors}})
+                else :
+                    return Response({"status ":False,"error": "No Such Guardian found with id :"+str(id)})
             else :
-                return Response({"status ":False,"error": "No Such Guardian found with id :"+str(id)})
-        else :
-            return Response({"status":False,"error":"id field is required"})
+                return Response({"status":False,"error":"id field is required"})
+        except Exception as e:
+            logger.exception(str(e))
+            # raise APIException
+            return Response({"status":False,"error":{"message":str(e)}})
 
 
 
@@ -930,23 +1027,29 @@ class AddBankDetails(APIView):
 
     def post(self,request):
         data = self.request.data
-        application = data["application_id"]
-        if BankDetails.objects.filter(application_id = application).exists():
-            return Response({"status":False,"error":{"message":"Bank Details already exists for this application"}})
-        else :
-            data['created_by'] = request.user.name
-            data['last_updated_by'] = request.user.name
-            logger.info("Application Id :"+str(data["application_id"]))
-            # data['application_id'] = int(data.pop("application"))
-            serializer = BankDetailsSerializer(data = data)
-            if serializer.is_valid():
-                serializer.create(data)
-                logger.info(serializer.data)
-                response = ClientBankDetailsSerializer(data)
-                return Response({"status":True,"response":{"data":response.data}})
+        logger.info("Bank Details Payload :"+data)
+        try :
+            application = data["application_id"]
+            if BankDetails.objects.filter(application_id = application).exists():
+                return Response({"status":False,"error":{"message":"Bank Details already exists for this application"}})
             else :
-                logger.error(serializer.errors)
-                return Response({"status":False,"error":{"message":serializer.errors}})
+                data['created_by'] = request.user.name
+                data['last_updated_by'] = request.user.name
+                logger.info("Application Id :"+str(data["application_id"]))
+                # data['application_id'] = int(data.pop("application"))
+                serializer = BankDetailsSerializer(data = data)
+                if serializer.is_valid():
+                    serializer.create(data)
+                    logger.info(serializer.data)
+                    response = ClientBankDetailsSerializer(data)
+                    return Response({"status":True,"response":{"data":response.data}})
+                else :
+                    logger.error(serializer.errors)
+                    return Response({"status":False,"error":{"message":serializer.errors}})
+        except Exception as e:
+            logger.exception(str(e))
+            # raise APIException
+            return Response({"status":False,"error":{"message":str(e)}})
 
 
 

@@ -58,7 +58,6 @@ class createItemFamily(APIView):
         logger.info(request.data)
         try:
             entries = chargebee.Item.list({
-             "limit" : 2
             })
             logger.info(entries)
             for entry in entries:
@@ -103,15 +102,21 @@ class createItem(APIView):
 
 class getItemsList(APIView):
     def get(self,request):
-        entries = chargebee.Item.list({
-        "limit" : 2
-        })
-        for entry in entries:
-            item = entry.item
-        if len(entries) >0:
-            return Response({"status":True,"response":entries.__dict__['response']})
-        else :
-            return Response({"status":False,"response":"No Items Found"})
+        try:
+            entries = chargebee.Item.list({
+            })
+            for entry in entries:
+                item = entry.item
+            if len(entries) >0:
+                return Response({"status":True,"response":entries.__dict__['response']})
+            else :
+                return Response({"status":False,"response":"No Items Found"})
+        except InvalidRequestError as e:
+            logger.info(str(e))
+            return Response({"status":False,"error":{"message":str(e)}})
+        except Exception as e:
+            logger.info(str(e))
+            return Response({"status":False,"error":{"message":str(e)}})
 
 
 
@@ -126,7 +131,7 @@ class createItemPrice(APIView):
             "price" : request.data['price'],
             "period_unit" : request.data['period_unit'],
             "period" : request.data['period'],
-            "currency_code" : request.data['currency_code'],
+            "currency_code" : request.data['currency_code']
             })
             logger.info(result)
             item_price = result.item_price
@@ -163,7 +168,7 @@ class updateItemPrice(APIView):
 
 class listCustomers(APIView):
     def get(self,request):
-        # try:
+        try:
             response =[]
             entries = chargebee.Customer.list({
                 "id[is]" : request.GET.get('id',None),
@@ -171,16 +176,17 @@ class listCustomers(APIView):
                 "last_name[is]" : request.GET.get('last_name',None),
                 "email[is]" : request.GET.get('email',None)
             })
+            logger.info(entries)
             if len(entries) >0:
                 return Response({"status":True,"response":entries.__dict__})
             else :
                 return Response({"status":False,"error":"No customers found"})
-        # except InvalidRequestError as e:
-        #     print(str(e))
-        #     return Response({"status":False,"error":{"message":str(e)}})
-        # except Exception as e:
-        #     print(str(e))
-        #     return Response({"status":False,"error":{"message":str(e)}})
+        except InvalidRequestError as e:
+            print(str(e))
+            return Response({"status":False,"error":{"message":str(e)}})
+        except Exception as e:
+            print(str(e))
+            return Response({"status":False,"error":{"message":str(e)}})
 
 
 class getCheckoutPage(APIView):

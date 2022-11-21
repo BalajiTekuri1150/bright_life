@@ -2,7 +2,7 @@ from django.urls import URLPattern, path
 
 from . import views
 
-from .views import CheckEmail, ListDocumentTypes, UpdateGuardianProfile, getApplicationDetails, RegisterUserAPIView,CountryList,GetCountryState,AddApplication,ListGender,ListChildStatus,ListChildType,ListRoles,AddBankDetails,getBankDetails,UpdateBankDetails,LogoutView,AddApplicationProfile,UpdateApplicationProfile,UpdateGuardianDetails,UpdateEducationalDetails,UpdateSponsorProfile, getGuardianProfileView,getSponsorProfileView,getApplicationDocuments,UpdateApplicationDocument,SponsoredApplications,Login,AddApplicationDocument,SponsorKid,UpdateSponsorship,UpdatePassword,GetOTP,verifyOTP,ResendOTP,ChangePassword,OTPMandatorySignup,GetOTPV2,ResendOTPV2,CreateUserView,RemoveApplicationDocuments,BulkInsertApplicationDocument,createCustomer,updateSubscriptionDetails
+from .views import CheckEmail, ListDocumentTypes, UpdateGuardianProfile, UpdateSponsorDetails, getApplicationDetails, RegisterUserAPIView,CountryList,GetCountryState,AddApplication,ListGender,ListChildStatus,ListChildType,ListRoles,AddBankDetails,getBankDetails,UpdateBankDetails,LogoutView,AddApplicationProfile,UpdateApplicationProfile,UpdateGuardianDetails,UpdateEducationalDetails,UpdateSponsorProfile, getGuardianProfileView,getSponsorProfileView,getApplicationDocuments,UpdateApplicationDocument,SponsoredApplications,Login,AddApplicationDocument,SponsorKid,UpdateSponsorship,UpdatePassword,GetOTP,verifyOTP,ResendOTP,ChangePassword,OTPMandatorySignup,GetOTPV2,ResendOTPV2,CreateUserView,RemoveApplicationDocuments,BulkInsertApplicationDocument,createCustomer,updateSubscriptionDetails
 
 from django.conf.urls.static import static
 from django.conf import  settings
@@ -67,7 +67,8 @@ urlpatterns =[
     path('brightlife/add/bank/details',AddBankDetails.as_view(),name="add_bank_details"),
     path('brightlife/update/bank/details',UpdateBankDetails.as_view(),name="update_bank_details"),
 
-
+  
+    path('brightlife/update/sponsor/details',UpdateSponsorDetails.as_view(),name="update_sponsor_details"),
     path('brightlife/get/sponsor/profile',getSponsorProfileView.as_view(),name="get_sponsor_view"),
     path('brightlife/update/sponsor/profile',UpdateSponsorProfile.as_view(),name="update_sponsor_profile"),
     path('brightlife/get/sponsor/kids',SponsoredApplications.as_view(),name="get_sponsor_kids"),
