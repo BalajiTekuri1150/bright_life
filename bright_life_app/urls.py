@@ -19,6 +19,7 @@ urlpatterns =[
     path('brightlife-test.chargebee.com/api/v2/items',createItem.as_view(),name="items"),
     path('brightlife-test.chargebee.com/api/v2/get/items/list',getItemsList.as_view(),name="items"),
     path('brightlife-test.chargebee.com/api/v2/item_prices',createItemPrice.as_view(),name="create-item-price"),
+    path('brightlife-test.chargebee.com/api/v2/update/item_prices',updateItemPrice.as_view(),name="update-item-price"),
     path('brightlife-test.chargebee.com/api/v2/list/customers',listCustomers.as_view(),name="list-customers"),
     path('brightlife-test.chargebee.com/api/v2/get/checkout',getCheckoutPage.as_view(),name="get-checkout-page"),
     path('brightlife-test.chargebee.com/api/v2/get/item/prices',getItemPricesList.as_view(),name="get-checkout-page"),
