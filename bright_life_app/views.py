@@ -667,6 +667,7 @@ class UpdateSponsorProfile(APIView):
     authentication_classes = [TokenAuthentication]
     def post(self,request):
         data = request.data
+        logger.info("Sponsor object :"+data)
         id = data.get("id")
         try:
             if id:
@@ -675,6 +676,7 @@ class UpdateSponsorProfile(APIView):
                     data['created_by'] = instance.created_by
                     data['last_updated_by'] = request.user.name
                     user = data.pop('user')
+                    logger.info("user object :"+user)
                     data['user']= user.get('id')
                     userInstance = User.objects.get(pk =user.get('id'))
                     userInstance.email = user.get('email',userInstance.email)
