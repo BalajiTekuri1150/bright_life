@@ -675,6 +675,7 @@ class UpdateSponsorProfile(APIView):
                     instance = Sponsor.objects.get(id = id)
                     data['created_by'] = instance.created_by
                     data['last_updated_by'] = request.user.name
+                    data['is_active'] = True
                     userObj = data.pop('user')
                     logger.info("user object :"+str(userObj))
                     user = json.loads(userObj[0])

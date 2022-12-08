@@ -251,7 +251,7 @@ class Application(models.Model):
     birthday = models.DateField(null=True,blank=True)
     age = models.PositiveIntegerField(null=True,blank=True)
     gender = models.ForeignKey(EnumGender,on_delete=models.CASCADE)
-    email = models.EmailField(max_length=250,null=True,blank=True,unique=True)
+    email = models.EmailField(max_length=250,null=True,blank=True,unique=False)
     mobile  = PhoneNumberField(unique = False,null = True,blank=True)
     profile = models.ImageField(upload_to=get_application_profile_path,null=True)
     child_type =  models.ForeignKey(EnumChildType,on_delete=models.CASCADE)
