@@ -1364,15 +1364,15 @@ class UpdateApplicationProfile(APIView):
         id = request.data["id"]
         if id:
             if Application.objects.filter(id = data['id']).exists():
-                email_exists = Application.objects.filter(email=data['email']).exclude(id = data["id"]).exists()
-                mobile_exists = Application.objects.filter(mobile=data['mobile']).exclude(id = data["id"]).exists()
-                if email_exists and mobile_exists:
-                    return Response({"status":False,"error":{"message":"Email and Mobile already Exists"}})
-                elif email_exists:
-                    return Response({"status":False,"error":{"message":"Application already exists with the given email"}})
-                elif mobile_exists :
-                    return Response({"status":False,"error":{"message":"Application already exists with the given mobile"}})
-                else:
+                # email_exists = Application.objects.filter(email=data['email']).exclude(id = data["id"]).exists()
+                # mobile_exists = Application.objects.filter(mobile=data['mobile']).exclude(id = data["id"]).exists()
+                # if email_exists and mobile_exists:
+                #     return Response({"status":False,"error":{"message":"Email and Mobile already Exists"}})
+                # elif email_exists:
+                #     return Response({"status":False,"error":{"message":"Application already exists with the given email"}})
+                # elif mobile_exists :
+                #     return Response({"status":False,"error":{"message":"Application already exists with the given mobile"}})
+                # else:
                     data = request.data
                     # data['birthday'] = time.strptime(data.pop('birthday'), "%d-%m-%Y").strptime("%y/%m-%d")
                     data['last_updated_by']=request.user.name
@@ -1397,6 +1397,9 @@ class UpdateApplicationProfile(APIView):
             else :
                 logger.exception("Application Doesn't exist")
                 return Response({"status":404,"error":{"message":"Application Doesn't exist"}})
+        else:
+            logger.exception("Id not found")
+            return Response({"status":False,"error":{"message":"Not found value id"}})
             
 
 class AddApplicationProfile(APIView):
