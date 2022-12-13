@@ -314,7 +314,7 @@ class BankDetails(models.Model):
     bank_name = models.CharField(max_length = 256,null = True,blank=True)
     state = models.CharField(max_length=256,null=True,blank=True)
     postal_code = models.TextField(validators = [MinLengthValidator(6),MaxLengthValidator(6)],null=True,blank=True)
-    account_holder = models.CharField(max_length = 20, unique = True,null = True,blank=True)
+    account_holder = models.CharField(max_length = 20, unique = False,null = True,blank=True)
     account_number = models.TextField(validators = [MinLengthValidator(9),MaxLengthValidator(18)],null=True,blank=True)
     branch = models.CharField(max_length = 256,null = True)
     ifsc = models.CharField(max_length = 11,null = True)

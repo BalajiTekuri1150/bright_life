@@ -1031,7 +1031,7 @@ class AddBankDetails(APIView):
 
     def post(self,request):
         data = self.request.data
-        logger.info("Bank Details Payload :"+data)
+        logger.info("Bank Details Payload :"+str(data))
         try :
             application = data["application_id"]
             if BankDetails.objects.filter(application_id = application).exists():
@@ -1052,6 +1052,7 @@ class AddBankDetails(APIView):
                     return Response({"status":False,"error":{"message":serializer.errors}})
         except Exception as e:
             logger.exception(str(e))
+            print(e)
             # raise APIException
             return Response({"status":False,"error":{"message":str(e)}})
 
