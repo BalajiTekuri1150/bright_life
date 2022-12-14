@@ -904,6 +904,7 @@ class getApplicationDetails(APIView,MyPaginator):
         gender = self.request.GET.get("gender",None)
         child_type = self.request.GET.get("child_type",None)
         guardian = self.request.GET.get("guardian_id",None)
+        family_income = self.request.GET.get("family_income",None)
         if application_id:
             filters["id"]=application_id
         if email:
@@ -922,6 +923,8 @@ class getApplicationDetails(APIView,MyPaginator):
             filters["child_type"] = child_type
         if guardian :
             filters["guardian"] = guardian
+        if family_income:
+            filters['annual_income'] = family_income
         queryset = Application.objects.filter(**filters,is_active = True)
         page = self.paginate_queryset(queryset,request)
         serializer = ApplicationDetailsSerializer(page,many=True)
