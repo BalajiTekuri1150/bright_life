@@ -837,12 +837,12 @@ class getGuardianProfileView(APIView):
                 if profile :
                     logger.info("profile :"+str(profile))
                     serializeddata['profile'] = profile.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
-                    return Response({"status":True,"response":{"sponsor":serializeddata}})
+                    return Response({"status":True,"response":{"guardian":serializeddata}})
                 else :
-                    return Response({"status":True,"response":{"sponsor":serializer.data}})
+                    return Response({"status":True,"response":{"guardian":serializer.data}})
             except Exception as e:
                 logger.exception(str(e))
-            return Response({"status":True,"response":{"guardian":serializer.data}})
+            # return Response({"status":True,"response":{"guardian":serializer.data}})
         else :
             return Response({"status":False,"error":{"message":"Guardian Details not found"}})
        
