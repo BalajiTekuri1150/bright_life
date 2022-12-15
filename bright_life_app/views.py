@@ -760,8 +760,12 @@ class UpdateGuardianProfile(APIView):
                     instance = Guardian.objects.get(id = id)
                     data['created_by'] = instance.created_by
                     data['last_updated_by'] = request.user.name
-                    user = data.pop('user')
+                    userObj = data.pop('user')
+                    logger.info("user object :"+str(userObj))
+                    user = json.loads(userObj[0])
                     data['user']= user.get('id')
+                    # user = data.pop('user')
+                    # data['user']= user.get('id')
                     userInstance = User.objects.get(pk =user.get('id'))
                     userInstance.email = user.get('email',userInstance.email)
                     userInstance.name = user.get('name',userInstance.name)
