@@ -805,7 +805,20 @@ class getSponsorProfileView(APIView):
             sponsor_profile = Sponsor.objects.get(user = request.GET.get("user_id"))
             logger.info(sponsor_profile)
             serializer = ClientSponsorProfle(sponsor_profile)
-            return Response({"status":True,"response":{"sponsor":serializer.data}})
+            serializeddata = serializer.data
+            logger.info("serializeddata"+str(serializeddata))
+            try :
+                profile =serializer.data.get('profile',None)
+                if profile :
+                    logger.info("profile :"+str(profile))
+                    serializeddata['profile'] = profile.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
+                    return Response({"status":True,"response":{"sponsor":serializeddata}})
+                else :
+                    return Response({"status":True,"response":{"sponsor":serializer.data}})
+            except Exception as e:
+                logger.exception(str(e))
+            # raise APIException
+            return Response({"status":False,"error":{"message":str(e)}})
         else :
             return Response({"status":False,"error":{"message":"Sponsor Details not found"}})
 
@@ -817,6 +830,18 @@ class getGuardianProfileView(APIView):
             guardian_profile = Guardian.objects.get(user = request.GET.get("user_id"))
             logger.info(guardian_profile)
             serializer = ClientGuardianProfle(guardian_profile)
+            serializeddata = serializer.data
+            logger.info("serializeddata"+str(serializeddata))
+            try :
+                profile =serializer.data.get('profile',None)
+                if profile :
+                    logger.info("profile :"+str(profile))
+                    serializeddata['profile'] = profile.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
+                    return Response({"status":True,"response":{"sponsor":serializeddata}})
+                else :
+                    return Response({"status":True,"response":{"sponsor":serializer.data}})
+            except Exception as e:
+                logger.exception(str(e))
             return Response({"status":True,"response":{"guardian":serializer.data}})
         else :
             return Response({"status":False,"error":{"message":"Guardian Details not found"}})
@@ -1060,7 +1085,6 @@ class AddBankDetails(APIView):
                     return Response({"status":False,"error":{"message":serializer.errors}})
         except Exception as e:
             logger.exception(str(e))
-            print(e)
             # raise APIException
             return Response({"status":False,"error":{"message":str(e)}})
 
