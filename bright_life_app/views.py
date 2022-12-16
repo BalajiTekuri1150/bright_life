@@ -766,7 +766,7 @@ class UpdateGuardianProfile(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
     def post(self,request):
-        data = request.data
+        data = request.data.copy()
         id = data.get("id")
         try :
             if id:
