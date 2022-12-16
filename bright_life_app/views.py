@@ -120,6 +120,7 @@ class CheckEmail(APIView):
             else :
                 return Response({"status":True,"message":"No Account Exists with the given email"})
         except Exception as e:
+            logger.exception(traceback.format_exc())
             logger.exception(str(e))
             # raise APIException
             return Response({"status":False,"error":{"message":str(e)}})
@@ -234,6 +235,7 @@ class Login(APIView):
                 return Response({"status":False,"error":{"message":serializer.errors}},
                                 status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            logger.exception(traceback.format_exc())
             logger.exception(str(e))
             # raise APIException
             return Response({"status":False,"error":{"message":str(e)}})
@@ -255,6 +257,7 @@ class ChangePassword(APIView):
                 logger.debug(serializer.errors)
                 return Response({"status":False,"error":{"message":serializer.errors}})
         except Exception as e:
+            logger.exception(traceback.format_exc())
             logger.exception(str(e))
             # raise APIException
             return Response({"status":False,"error":{"message":str(e)}})
@@ -304,6 +307,7 @@ def sendOTP(email,context,user):
             logger.info("Unable to send email ")
             return False
     except Exception as e:
+        logger.exception(traceback.format_exc())
         logger.exception(str(e))
         # raise APIException
         return Response({"status":False,"error":{"message":str(e)}})
@@ -345,6 +349,7 @@ def sendSignupOTP(email,context):
             logger.debug("Error while sending signup otp")
             return False
     except Exception as e:
+        logger.exception(traceback.format_exc())
         logger.exception(str(e))
         # raise APIException
         return Response({"status":False,"error":{"message":str(e)}})
@@ -381,6 +386,7 @@ class GetOTP(APIView):
                 logger.exception(str(e))
                 return Response({"status":False,"message":serializer.errors})
         except Exception as e:
+            logger.exception(traceback.format_exc())
             logger.exception(str(e))
             # raise APIException
             return Response({"status":False,"error":{"message":str(e)}})
@@ -437,6 +443,7 @@ class GetOTPV2(APIView):
                 logger.exception(str(e))
                 return Response({"status":False,"error":{"message":serializer.errors}})
         except Exception as e:
+            logger.exception(traceback.format_exc())
             logger.exception(str(e))
             # raise APIException
             return Response({"status":False,"error":{"message":str(e)}})
@@ -500,6 +507,7 @@ class ResendOTP(APIView):
                 logger.error("Invalid referrence for resend")
                 return Response({"status":False,"message ":"ErrorOTPInvalidReferenceForResend"})
         except Exception as e:
+            logger.exception(traceback.format_exc())
             logger.exception(str(e))
             # raise APIException
             return Response({"status":False,"error":{"message":str(e)}})
@@ -562,6 +570,7 @@ class ResendOTPV2(APIView):
                 logger.info("Missing field referrence_id")
                 return Response({"status":False,"error":{"message ":"missing field referrence_id","details":request.data}})
         except Exception as e:
+            logger.exception(traceback.format_exc())
             logger.exception(str(e))
             # raise APIException
             return Response({"status":False,"error":{"message":str(e)}})
@@ -616,6 +625,7 @@ class UpdatePassword(APIView):
                 logger.debug(str(serializer.errors))
                 return Response({"status":False,"error":{"message" :serializer.errors}})
         except Exception as e:
+            logger.exception(traceback.format_exc())
             logger.exception(str(e))
             # raise APIException
             return Response({"status":False,"error":{"message":str(e)}})
@@ -649,6 +659,7 @@ class verifyOTP(APIView):
                 logger.error(serializer.errors)
                 return Response({"status":False,"error":{"message":serializer.errors}})
         except Exception as e:
+            logger.exception(traceback.format_exc())
             logger.exception(str(e))
             # raise APIException
             return Response({"status":False,"error":{"message":str(e)}})
@@ -694,6 +705,7 @@ class UpdateSponsorProfile(APIView):
                             logger.info(res.data)
                             return Response({"status":True,"response":{"data":res.data}})
                         except Exception as e:
+                            logger.exception(traceback.format_exc())
                             logger.exception(str(e))
                             # raise APIException
                             Response({"status":False,"error":{"message":str(e)}})
@@ -703,6 +715,7 @@ class UpdateSponsorProfile(APIView):
             else :
                 return Response({"status":False,"error":"id field is required"})
         except Exception as e:
+            logger.exception(traceback.format_exc())
             logger.exception(str(e))
             # raise APIException
             Response({"status":False,"error":{"message":str(e)}})
