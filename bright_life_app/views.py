@@ -742,6 +742,7 @@ class UpdateSponsorDetails(APIView):
             else :
                 return Response({"status":False,"error":"id field is required"})
         except Exception as e:
+            logger.exception(traceback.format_exc())
             logger.exception(str(e))
             # raise APIException
             Response({"status":False,"error":{"message":str(e)}})
@@ -790,6 +791,7 @@ class UpdateGuardianProfile(APIView):
             else :
                 return Response({"status":False,"error":"id field is required"})
         except Exception as e:
+            logger.exception(traceback.format_exc())
             logger.exception(str(e))
             # raise APIException
             return Response({"status":False,"error":{"message":str(e)}})
