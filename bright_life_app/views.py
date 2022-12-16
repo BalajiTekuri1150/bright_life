@@ -677,7 +677,7 @@ class UpdateSponsorProfile(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
     def post(self,request):
-        data = request.data
+        data = request.data.copy()
         logger.info("Sponsor object :"+str(data))
         id = data.get("id")
         try:
