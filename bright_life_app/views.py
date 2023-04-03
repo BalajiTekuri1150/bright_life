@@ -973,7 +973,19 @@ class getApplicationDetails(APIView,MyPaginator):
         queryset = Application.objects.filter(**filters,is_active = True)
         page = self.paginate_queryset(queryset,request)
         serializer = ApplicationDetailsSerializer(page,many=True)
+        for i in serializer.data:
+            try :
+                profile =i.get('profile',None)
+                if profile :
+                    logger.info("profile :"+str(profile))
+                    i['profile'] = profile.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
+            except Exception as e:
+                logger.exception(traceback.format_exc())
+                logger.exception("Exception occured :"+str(e))
+                return Response({"status ": False,"error ": str})
         return Response({"status":True,"response":{"data":serializer.data}})
+
+        
 
 class SponsoredApplications(APIView,MyPaginator):
     permission_classes = [IsAuthenticated]
