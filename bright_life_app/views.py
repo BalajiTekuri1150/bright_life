@@ -143,6 +143,7 @@ from decimal import Decimal
 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
+end_point_secret = settings.STRIPE_WEBHOOK_SECRET
 
 def format_price(price, currency):
     # Set the locale based on the currency
@@ -251,8 +252,10 @@ class CreateCheckoutSession(APIView):
 class UpdateStripeSubscriptionDetails(APIView):
     def post(self,request):
         payload = request.body
+        logger.info("UpdateStripeSubscriptionDetails method reached")
+        logger.info("payload :"+str(payload))
         sig_header = request.META['HTTP_STRIPE_SIGNATURE']
-        endpoint_secret = 'YOUR_STRIPE_WEBHOOK_SECRET'
+        endpoint_secret = end_point_secret
 
         try:
             event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
