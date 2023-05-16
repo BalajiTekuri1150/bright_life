@@ -25,6 +25,7 @@ from . import chargebee_utils as chargebee
 from .logger import *
 
 
+
 class RegisterSerializer(serializers.ModelSerializer):
   email = serializers.EmailField(
     required=True,
@@ -66,40 +67,40 @@ class RegisterSerializer(serializers.ModelSerializer):
             return str(e)
     return user
 
-# class SignupSerializer(serializers.Serializer):
-#   email = serializers.EmailField(
-#     required=True,
-#     validators=[UniqueValidator(queryset=User.objects.all())])
-#   password = serializers.CharField(
-#     write_only=True, required=True, validators=[validate_password])
-#   password2 = serializers.CharField(write_only=True, required=True)
-#   otp = serializers.CharField()
-#   class Meta:
-#     fields = ('name', 'password', 'password2',
-#          'email', 'role','otp')
+class SignupSerializer(serializers.Serializer):
+  email = serializers.EmailField(
+    required=True,
+    validators=[UniqueValidator(queryset=User.objects.all())])
+  password = serializers.CharField(
+    write_only=True, required=True, validators=[validate_password])
+  password2 = serializers.CharField(write_only=True, required=True)
+  otp = serializers.CharField()
+  class Meta:
+    fields = ('name', 'password', 'password2',
+         'email', 'role','otp')
 
-#   def validate(self, attrs):
-#     if attrs['password'] != attrs['password2']:
-#       raise serializers.ValidationError(
-#         {"password": "Password fields didn't match."})
-#     return attrs
-#   def create(self, validated_data):
-#     print("serializer method reached")
-#     user = User.objects.create(
-#       name=validated_data['name'],
-#       email=validated_data['email'],
-#       role = validated_data['role'],
-#       is_email_verified = True
-#     )
-#     user.set_password(validated_data['password'])
-#     user.save()
-#     if user.role == "sponsor":
-#       try:
-#         sponsorProfile = Sponsor.objects.create(user_id=user.id,created_by=user.name,last_updated_by=user.name)
-#       except Exception as e:
-#         user.delete()
-#         return str(e)
-#     return user
+  def validate(self, attrs):
+    if attrs['password'] != attrs['password2']:
+      raise serializers.ValidationError(
+        {"password": "Password fields didn't match."})
+    return attrs
+  def create(self, validated_data):
+    print("serializer method reached")
+    user = User.objects.create(
+      name=validated_data['name'],
+      email=validated_data['email'],
+      role = validated_data['role'],
+      is_email_verified = True
+    )
+    user.set_password(validated_data['password'])
+    user.save()
+    if user.role == "sponsor":
+      try:
+        sponsorProfile = Sponsor.objects.create(user_id=user.id,created_by=user.name,last_updated_by=user.name)
+      except Exception as e:
+        user.delete()
+        return str(e)
+    return user
 
 
 
@@ -132,14 +133,14 @@ class SignupSerializer(serializers.Serializer):
         email=validated_data['email'],
         role = validated_data['role'],
         is_email_verified = True)
-        customer = chargebee.create_customer(validated_data)
-        logger.info("after creating chargebee account"+customer)
-        sub_data = ChargebeeUser.create(user=user, customer_id=customer.id)
-        logger.info("after creating Chargebee user"+sub_data)
-        if customer is None or user is None:
-          logger.info("customer object :"+customer)
-          logger.info("user object :"+user)
-          raise DatabaseError
+        # customer = chargebee.create_customer(validated_data)
+        # logger.info("after creating chargebee account"+customer)
+        # sub_data = ChargebeeUser.create(user=user, customer_id=customer.id)
+        # logger.info("after creating Chargebee user"+sub_data)
+        # if customer is None or user is None:
+        #   logger.info("customer object :"+customer)
+        #   logger.info("user object :"+user)
+        #   raise DatabaseError
         user.set_password(validated_data['password'])
         user.save()
         if user.role == "sponsor":
@@ -444,6 +445,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
     instance.achievements =  validated_data.get('achievements',instance.achievements)
     instance.about =  validated_data.get('about',instance.about)
     instance.profession =  validated_data.get('profession',instance.profession)
+    instance.zoho_id =  validated_data.get('zoho_id',instance.zoho_id)
     instance.annual_income =  validated_data.get('annual_income',instance.annual_income)
     instance.family_members =  validated_data.get('family_members',instance.family_members)
     instance.extra_allowance =  validated_data.get('extra_allowance',instance.extra_allowance)
@@ -548,9 +550,10 @@ class ApplicationDetailsSerializer(serializers.ModelSerializer):
   gender = GenderSerializer(read_only = True)
   child_type = ChildTypeSerializer(read_only = True)
   status = ChildStatusSerializer(read_only = True)
+  guardian = ClientGuardianProfle(read_only=True)
   class Meta:
     model = Application
-    fields = ["id","name","birthday","email","mobile","profile","country","state","grade","school","school_address","hobbies","aspirations","achievements","about","profession","annual_income","family_members","extra_allowance","gender","child_type","status","guardian_id"]
+    fields = ["id","name","birthday","email","mobile","profile","country","state","grade","school","school_address","hobbies","aspirations","achievements","about","profession","annual_income","family_members","extra_allowance","gender","child_type","status","guardian","zoho_id"]
 
   def to_representation(self, instance):
     data = super().to_representation(instance)

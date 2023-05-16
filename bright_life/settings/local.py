@@ -8,10 +8,22 @@ from decouple import config
 
 SECRET_KEY = config('SECRET_KEY')
 
-DEBUG = os.environ.get('DJANGO_DEBUG')
+DEBUG = config('DEBUG')
 
 CHARGEBEE_APIKEY = config('CHARGEBEE_APIKEY')
 CHARGEBEE_SITENAME = config('CHARGEBEE_SITENAME')
+
+#Zoho configuration 
+ZOHO_CLIENT_ID = config('ZOHO_CLIENT_ID')
+ZOHO_CLIENT_SECRET =config('ZOHO_CLIENT_SECRET')
+ZOHO_REFRESH_TOKEN =config('ZOHO_REFRESH_TOKEN')
+ZOHO_USER_MODULE_REFRESH_TOKEN =config('ZOHO_USER_MODULE_REFRESH_TOKEN')
+ZOHO_API_INITIAL_PATH =config('ZOHO_API_INITIAL_PATH')
+
+# Stripe Configurations
+STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY')
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY')
+STRIPE_PRODUCT_ID = config('STRIPE_PRODUCT_ID')
 
 ALLOWED_HOSTS = ["*"]
 
@@ -130,3 +142,32 @@ DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 AWS_S3_SIGNATURE_VERSION = "s3v4"
 AWS_QUERYSTRING_AUTH = False
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': '127.0.0.1:11211',
+        'OPTIONS': {
+            # 'TIMEOUT': 3600,  # cache expiration time in seconds
+        },
+    },
+}
+
+ASYNC_SUPPORT=True
+
+
+# SOCIALACCOUNT_PROVIDERS = {
+#     'google': {
+#         'APP': {
+#             'client_id': 'YOUR_CLIENT_ID',
+#             'secret': 'YOUR_CLIENT_SECRET',
+#             'key': ''
+#         },
+#         'SCOPE': [
+#             'profile',
+#             'email'
+#         ],
+#         'AUTH_PARAMS': {
+#             'access_type': 'online'
+#         }
+#     }
+# }

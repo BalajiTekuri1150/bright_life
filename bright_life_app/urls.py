@@ -2,7 +2,7 @@ from django.urls import URLPattern, path
 
 from . import views
 
-from .views import CheckEmail, ListDocumentTypes, UpdateGuardianProfile, UpdateSponsorDetails, getApplicationDetails, RegisterUserAPIView,CountryList,GetCountryState,AddApplication,ListGender,ListChildStatus,ListChildType,ListRoles,AddBankDetails,getBankDetails,UpdateBankDetails,LogoutView,AddApplicationProfile,UpdateApplicationProfile,UpdateGuardianDetails,UpdateEducationalDetails,UpdateSponsorProfile, getGuardianProfileView,getSponsorProfileView,getApplicationDocuments,UpdateApplicationDocument,SponsoredApplications,Login,AddApplicationDocument,SponsorKid,UpdateSponsorship,UpdatePassword,GetOTP,verifyOTP,ResendOTP,ChangePassword,OTPMandatorySignup,GetOTPV2,ResendOTPV2,CreateUserView,RemoveApplicationDocuments,BulkInsertApplicationDocument,createCustomer,updateSubscriptionDetails
+from .views import CheckEmail, ListDocumentTypes, UpdateGuardianProfile, UpdateSponsorDetails, getApplicationDetails, RegisterUserAPIView,CountryList,GetCountryState,AddApplication,ListGender,ListChildStatus,ListChildType,ListRoles,AddBankDetails,getBankDetails,UpdateBankDetails,LogoutView,AddApplicationProfile,UpdateApplicationProfile,UpdateGuardianDetails,UpdateEducationalDetails,UpdateSponsorProfile, getGuardianProfileView,getSponsorProfileView,getApplicationDocuments,UpdateApplicationDocument,SponsoredApplications,Login,AddApplicationDocument,SponsorKid,UpdateSponsorship,UpdatePassword,GetOTP,verifyOTP,ResendOTP,ChangePassword,OTPMandatorySignup,GetOTPV2,ResendOTPV2,CreateUserView,RemoveApplicationDocuments,BulkInsertApplicationDocument,createCustomer,updateSubscriptionDetails,CreateView,ListDonationPlans,CreateCheckoutSession,UpdateStripeSubscriptionDetails
 
 from django.conf.urls.static import static
 from django.conf import  settings
@@ -31,6 +31,7 @@ urlpatterns =[
     path('brightlife/signin',Login.as_view(),name='login'),
     # path('brightlife/signup',RegisterUserAPIView.as_view(),name="register"),
     path('brightlife/signup',CreateUserView.as_view(),name="register"),
+    #path('brightlife/create',CreateView.as_view(),name="summy"),
 
     path('brightlife/logout',LogoutView.as_view(),name="logout"),
 
@@ -39,6 +40,12 @@ urlpatterns =[
     # path('brightlife/password/reset/<uidb64>/<token>/',PasswordTokenCheckAPI.as_view(), name='password_reset_confirm'),
     # path('brightlife/password/reset/complete', SetNewPasswordAPIView.as_view(),
     #     name='password-reset-complete'),
+    
+    
+    path('brightlife/list/donations',ListDonationPlans.as_view(),name="get_otp"),
+    path('brightlife/create/checkout',CreateCheckoutSession.as_view(),name="get_otp"),
+    path('brightlife/update/subscription/details',UpdateStripeSubscriptionDetails.as_view(),name="update-subscription-details"),
+    
 
 
     path('brightlife/get/otp',GetOTP.as_view(),name="get_otp"),

@@ -124,6 +124,17 @@ AWS_QUERYSTRING_AUTH = False
 CHARGEBEE_APIKEY = config('CHARGEBEE_APIKEY')
 CHARGEBEE_SITENAME = config('CHARGEBEE_SITENAME')
 
+ZOHO_CLIENT_ID = config('ZOHO_CLIENT_ID')
+ZOHO_CLIENT_SECRET =config('ZOHO_CLIENT_SECRET')
+ZOHO_REFRESH_TOKEN =config('ZOHO_REFRESH_TOKEN')
+ZOHO_USER_MODULE_REFRESH_TOKEN =config('ZOHO_USER_MODULE_REFRESH_TOKEN')
+ZOHO_API_INITIAL_PATH =config('ZOHO_API_INITIAL_PATH')
+
+# Stripe Configurations
+STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY')
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY')
+STRIPE_PRODUCT_ID = config('STRIPE_PRODUCT_ID')
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -138,3 +149,21 @@ LOGGING = {
             'handlers': ['all_file'],
     },
 }
+
+
+# SOCIALACCOUNT_PROVIDERS = {
+#     'google': {
+#         'APP': {
+#             'client_id': 'YOUR_CLIENT_ID',
+#             'secret': 'YOUR_CLIENT_SECRET',
+#             'key': ''
+#         },
+#         'SCOPE': [
+#             'profile',
+#             'email'
+#         ],
+#         'AUTH_PARAMS': {
+#             'access_type': 'online'
+#         }
+#     }
+# }

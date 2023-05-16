@@ -63,6 +63,24 @@ from django.db import transaction
 
 from django.utils.timezone import get_current_timezone
 
+import requests
+
+import asyncio
+import aiohttp
+
+from django.utils.decorators import classonlymethod
+from asgiref.sync import async_to_sync,sync_to_async
+from django.core.cache import cache
+from datetime import datetime, timedelta
+
+import types
+import stripe
+import locale
+from decimal import Decimal
+
+# from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+# from dj_rest_auth.registration.views import SocialLoginView
+
 # HTML email required stuff
 # from django.core.mail import EmailMultiAlternatives
 # from django.template.loader import render_to_string
@@ -72,12 +90,527 @@ from django.utils.timezone import get_current_timezone
 
 #     allowed_schemes = [os.environ.get('APP_SCHEME'), 'http', 'https']
 
-class RegisterUserAPIView(generics.CreateAPIView):
-    permission_classes = (AllowAny,)
-    serializer_class = RegisterSerializer
+
+# class GoogleSignup(SocialLoginView):
+#     adapter_class = GoogleOAuth2Adapter
+
+#     def post(self, request, *args, **kwargs):
+#         # Call the parent post method to authenticate the user with Google
+#         response = super().post(request, *args, **kwargs)
+
+#         # If authentication was successful, create a new user account
+#         if response.status_code == status.HTTP_200_OK:
+#             user = response.data['user']
+#             token = response.data['access_token']
+
+#             # Customize the user object as needed
+#             user.name = request.data.get('name')
+#             user.email = request.data.get('email')
+#             user.role = request.data.get('role')
+#             user.save()
+
+#             # Return the user object and token to the client
+#             return Response({
+#                 'user': user,
+#                 'access_token': token
+#             }, status=status.HTTP_200_OK)
+
+#         # Otherwise, return the error response
+#         return response
+
+
+
+# class GoogleLogin(SocialLoginView):
+#     adapter_class = GoogleOAuth2Adapter
+
+#     def post(self, request, *args, **kwargs):
+#         # Call the parent post method to authenticate the user with Google
+#         response = super().post(request, *args, **kwargs)
+
+#         # If authentication was successful, retrieve the user object and token
+#         if response.status_code == status.HTTP_200_OK:
+#             user = response.data['user']
+#             token = response.data['access_token']
+
+#             # Return the user object and token to the client
+#             return Response({
+#                 'user': user,
+#                 'access_token': token
+#             }, status=status.HTTP_200_OK)
+
+#         # Otherwise, return the error response
+#         return response
+
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
+def format_price(price, currency):
+    # Set the locale based on the currency
+    if currency.lower() == 'usd':
+        locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+    elif currency.lower() == 'inr':
+        locale.setlocale(locale.LC_ALL, 'en_IN.UTF-8')
+    else:
+        # Set a default locale for other currencies
+        locale.setlocale(locale.LC_ALL, '')
+
+    # Format the price based on the locale
+    formatted_price = locale.currency(price, grouping=True)
+
+    return formatted_price
+
+class ListDonationPlans(APIView):
+    permission_classes= [AllowAny]
+    authentication_classes =[]
+    def post(self,request):
+        plans = stripe.Price.list(product=settings.STRIPE_PRODUCT_ID,
+                                 active=True)
+        logger.info("plans :"+str(plans))
+        plan_data = []
+        
+
+        for plan in plans:
+            amount_decimal = Decimal(plan.unit_amount_decimal)
+            formatted_price = format_price(amount_decimal / 100, plan.currency)
+            print(formatted_price)
+            if plan.type == 'recurring':
+                plan_data.append({
+                    'id': plan.id,
+                    'name': plan.nickname,
+                    'amount': formatted_price,
+                    'interval': plan.recurring.interval,
+                    'currency': plan.currency,
+                    "type" : plan.type
+                })
+            else :
+               plan_data.append({
+                    'id': plan.id,
+                    'name': plan.nickname,
+                    'currency': plan.currency,
+                    'amount': formatted_price,
+                    "type":plan.type
+                }) 
+
+        return Response({'plans': plan_data})
+    
+class CreateCheckoutSession(APIView):
+    permission_classes= [AllowAny]
+    authentication_classes =[]
+    def post(self,request):
+        sponsor_email = request.data.get('email')
+        print(sponsor_email)
+        amount = request.data.get('amount')
+        print(amount)
+        is_recurring = request.data.get('recurring') == 'true'
+        currency = request.data.get('currency')
+
+        # Create a one-time payment or recurring subscription
+        if not is_recurring:
+            session = stripe.checkout.Session.create(
+                success_url='http://127.0.0.1:8000/success',
+                cancel_url='http://127.0.0.1:8000/cancel',
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': currency,
+                        'unit_amount': int(amount) * 100,  # Amount in cents
+                        'product_data': {
+                            'name': 'One-time Donation',
+                            'description': 'Thank you for your support!',
+                        },
+                    },
+                    'quantity': 1,
+                }],
+                mode='payment',
+                customer_email=sponsor_email,
+            )
+        else:
+            plan_id = request.data.get('plan_id')
+            session = stripe.checkout.Session.create(
+                success_url='http://127.0.0.1:8000/success',
+                cancel_url='http://127.0.0.1:8000/cancel',
+                payment_method_types=['card'],
+                mode='subscription',
+                subscription_data={
+                    'items': [{
+                        'plan': plan_id,
+                    }],
+                    'metadata': {
+                        'email': sponsor_email,
+                        'custom_amount': amount,
+                    },
+                },
+                customer_email=sponsor_email,
+            )
+        logger.info("sessionId:"+str(session.id))
+        print("sessionId:"+str(session.id))
+        return Response({'sessionId': session.id})
     
 
 
+class UpdateStripeSubscriptionDetails(APIView):
+    def post(self,request):
+        payload = request.body
+        sig_header = request.META['HTTP_STRIPE_SIGNATURE']
+        endpoint_secret = 'YOUR_STRIPE_WEBHOOK_SECRET'
+
+        try:
+            event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
+            data = event['data']
+            event_type = event['type']
+
+            if event_type == 'payment_intent.succeeded':
+                logger.info("payload :"+str(payload))
+                # Payment succeeded, update payment status in the database
+                payment_intent_id = data['object']['id']
+                # Update the payment status in the database based on the payment_intent_id
+
+            elif event_type == 'payment_intent.payment_failed':
+                logger.info("payload :"+str(payload))
+                # Payment failed, update payment status in the database
+                payment_intent_id = data['object']['id']
+                # Update the payment status in the database based on the payment_intent_id
+
+            # Handle other event types as needed
+
+            return Response({'status': 'success'})
+
+        except ValueError as e:
+            # Invalid payload
+            return Response({'status': 'error', 'message': str(e)})
+
+        except stripe.error.SignatureVerificationError as e:
+            # Invalid signature
+            return Response({'status': 'error', 'message': str(e)})
+
+
+
+    
+
+
+
+class RegisterUserAPIView(generics.CreateAPIView):
+    permission_classes = (AllowAny,)
+    serializer_class = RegisterSerializer
+
+async def addDonorToZoho(user):
+    url = 'https://zohoapis.in/crm/v2.1/Donors'
+    data = {
+        'data': [
+            {
+                'Name1': user.name,
+                'Email': user.email
+            }
+        ]
+    }
+    token = get_access_token()
+    logger.info("token :"+token)
+    async with aiohttp.ClientSession(headers = {'Authorization': 'Zoho-oauthtoken '+token}) as session:
+        async with session.post(url, json=data) as response:
+            logger.info("response :"+response)
+            if response.status == 401:
+                error_response = await response.json()
+                print(error_response)
+                logger.error("error while syncing to zoho :"+str(error_response))
+            else :
+                logger.info("success response :"+str(response.json()))
+                print("response :"+str(response.json()))
+
+
+def addDonorToZohov1(user):
+    url = 'https://zohoapis.in/crm/v2.1/Donors'
+    data = {
+        'data': [
+            {
+                'Name1': user.name,
+                'Email': user.email
+            }
+        ]
+    }
+    token = get_access_token()
+    logger.info("token :"+token)
+    headers = {'Authorization': 'Zoho-oauthtoken '+token}
+    zoho_response = requests.post(url,headers = headers, json=data)
+    response = zoho_response.json()
+    logger.info("response :"+str(response))
+    if response['data'][0]['status'] == "success" :
+        logger.info("success response :"+str(response))
+        print("response :"+str(response))
+        try:
+            zoho_id = response['data'][0]['details']['id']
+            print(zoho_id)
+            print("is_sponsor_exists "+str(Sponsor.objects.filter(user=user).exists))
+            sponsor = Sponsor.objects.filter(user=user).first()
+            print(sponsor)
+            if sponsor:
+                sponsor.zoho_id = zoho_id
+                sponsor.save()
+            else :
+                logger.error("no sponsor found with "+str(user)+"to update zoho_id :"+str(zoho_id))
+        except Exception as e:
+            logger.info("Exception while updating zoho_id to sponsor")
+            logger.exception(str(e))
+    else :
+        error_response = response
+        print(error_response)
+        logger.error("error while syncing to zoho :"+str(error_response))
+
+def updateDonortoZoho(donor):
+    url = 'https://zohoapis.in/crm/v2.1/Donors'
+    print("child :"+str(donor))
+    if 'zoho_id' in donor and donor['zoho_id']:
+        url = url+"/"+donor['zoho_id']
+        filters={
+            'data':[
+                {
+        
+                }
+            ]
+        }
+        if 'user' in donor and donor['user']:
+            print(donor['user'])
+            if 'name' in donor['user']:
+                filters['data'][0]["Name1"]= donor['user']['name']
+            if 'email' in donor['user'] :
+                filters['data'][0]['Email'] = donor['user']['email']
+        if 'mobile' in donor and donor['mobile']:
+            filters['data'][0]["Donor_Mobile_Number"] = donor['mobile']
+        if 'country' in donor and donor['country']:
+            filters['data'][0]["Donor_Country"] = donor['country']
+        if 'address' in donor and donor['address']:
+            filters['data'][0]["Donor_Address"] = donor['address']
+        print(filters)
+        token = get_access_token()
+        logger.info("token :"+token)
+        headers = {'Authorization': 'Zoho-oauthtoken '+token}
+        zoho_response = requests.put(url,headers = headers, json=filters)
+        response = zoho_response.json()
+        logger.info("response :"+str(response))
+        if response['data'][0]['status'] == "success" :
+            logger.info("success response :"+str(response))
+            print("response :"+str(response))
+        else :
+            error_response = response
+            print(error_response)
+            logger.error("error while syncing to zoho :"+str(error_response))
+    else :
+        logger.error("zoho_id not found for donor"+str(donor['id']))
+
+
+
+
+def addChildToZoho(child):
+    url = 'https://zohoapis.in/crm/v2.1/Childs'
+    print("child :"+str(child))
+    filters={
+        'data':[
+        {
+        
+        }
+        ]
+        }
+    if 'name' in child and child['name']:
+        print(child['name'])
+        filters['data'][0]["Name"]= child['name']
+    if 'guardian' in child and child['guardian'] :
+        if 'user' in child['guardian'] and child['guardian']['user'] :
+            filters['data'][0]["Parent_Guardian_Name"] = child['guardian']['user']['name']
+    if 'email' in child and child['email']:
+        filters['data'][0]["Email"]= child['email']
+    if 'mobile' in child and child['mobile']:
+        filters['data'][0]["Mobile"] = child['mobile']
+    if 'country' in child and child['country']:
+        filters['data'][0]["Country"] = child.country['name']
+    if 'school' in child and child['school']:
+        filters['data'][0]["School"] = child['school']
+    if 'school_address' in child and child['school_address']:
+        filters['data'][0]["School_Address"] = child['school_address']
+    if 'status' in child and child['status']:
+        filters['data'][0]["Status"] = child['status']['name']
+    if 'gender' in child and child['gender'] :
+        filters['data'][0]["Gender"] = child['gender']['name']
+    if 'region' in child and child['region']:
+        filters['data'][0]["Address"] = child['region']
+    if 'birthday' in child and child['birthday'] :
+        filters['data'][0]["DOB"] = child['birthday']
+    print(filters)
+    token = get_access_token()
+    logger.info("token :"+token)
+    headers = {'Authorization': 'Zoho-oauthtoken '+token}
+    zoho_response = requests.post(url,headers = headers, json=filters)
+    response = zoho_response.json()
+    logger.info("response :"+str(response))
+    if response['data'][0]['status'] == "success" :
+        logger.info("success response :"+str(response))
+        print("response :"+str(response))
+        try:
+            zoho_id = response['data'][0]['details']['id']
+            print(zoho_id)
+            application = Application.objects.filter(id = child['id']).first()
+            print(application)
+            if application:
+                application.zoho_id = zoho_id
+                application.save()
+            else :
+                logger.error("no child found with "+str(application)+"to update zoho_id :"+str(zoho_id))
+        except Exception as e:
+            logger.info("Exception while updating zoho_id to child")
+            logger.exception(str(e))
+    else :
+        error_response = response
+        print(error_response)
+        logger.error("error while syncing to zoho :"+str(error_response))
+
+
+def updateChildtoZoho(child):
+    url = 'https://zohoapis.in/crm/v2.1/Childs'
+    print("child :"+str(child))
+    if 'zoho_id' in child and child['zoho_id']:
+        url = url+"/"+child['zoho_id']
+        filters={
+        'data':[
+        {
+        
+        }
+        ]
+        }
+        if 'name' in child and child['name']:
+            print(child['name'])
+            filters['data'][0]["Name"]= child['name']
+        if 'guardian' in child and child['guardian'] :
+            if 'user' in child['guardian'] and child['guardian']['user'] :
+                filters['data'][0]["Parent_Guardian_Name"] = child['guardian']['user']['name']
+        if 'email' in child and child['email']:
+            filters['data'][0]["Email"]= child['email']
+        if 'mobile' in child and child['mobile']:
+            filters['data'][0]["Mobile"] = child['mobile']
+        if 'country' in child and child['country']:
+            filters['data'][0]["Country"] = child.country['name']
+        if 'school' in child and child['school']:
+            filters['data'][0]["School"] = child['school']
+        if 'school_address' in child and child['school_address']:
+            filters['data'][0]["School_Address"] = child['school_address']
+        if 'status' in child and child['status']:
+            filters['data'][0]["Status"] = child['status']['name']
+        if 'gender' in child and child['gender'] :
+            filters['data'][0]["Gender"] = child['gender']['name']
+        if 'region' in child and child['region']:
+            filters['data'][0]["Address"] = child['region']
+        if 'birthday' in child and child['birthday'] :
+            filters['data'][0]["DOB"] = child['birthday']
+        print(filters)
+        token = get_access_token()
+        logger.info("token :"+token)
+        headers = {'Authorization': 'Zoho-oauthtoken '+token}
+        zoho_response = requests.put(url,headers = headers, json=filters)
+        response = zoho_response.json()
+        logger.info("response :"+str(response))
+        if response['data'][0]['status'] == "success" :
+            logger.info("success response :"+str(response))
+            print("response :"+str(response))
+        else :
+            error_response = response
+            print(error_response)
+            logger.error("error while syncing to zoho :"+str(error_response))
+    else :
+        logger.error("zoho_id not found for child"+str(child['id']))
+
+
+    
+# class CreateView(APIView):
+#     permission_classes= [AllowAny]
+#     authentication_classes =[]
+#     def post(self,request):
+
+#         # async def retry_post():
+#         #     await async_post()
+#         async def async_post():
+#             url = 'https://zohoapis.in/crm/v2.1/Donors'
+#             print(url)
+#             data = {
+#                 'data': [
+#                     {
+#                         'Name1': "admin zoho",
+#                         'Email': "admin@zoho.com"
+#                 }
+#                 ]
+#             }
+#             token = get_access_token()
+#             print(token)
+#             async with aiohttp.ClientSession(headers = {'Authorization': 'Zoho-oauthtoken '+token}) as session:
+#                 print(session)
+#                 print(get_access_token())
+#                 async with session.post(url, json=data) as response:
+#                     print(response)
+#                     print(get_access_token())
+#                     if response.status == 401:
+#                         error_response = await response.json()
+#                         print(error_response)
+#                         # print(get_access_token())
+#                         # await retry_post()
+#                         # return Response({"response":error_response})
+#                     else :
+#                         return Response({"status":True})
+#         return async_to_sync(async_post)()
+
+
+# class CreateUserView(APIView):
+#     permission_classes= [AllowAny]
+#     authentication_classes =[]
+#     async def async_post(self,request):
+#             print(request)
+#             logger.info(request)
+#             try:
+                
+#                 if await User.objects.filter(email = request.data.get("email",None)).exists():
+#                     return Response({"status":False,"error":"User already exists with the given email"})
+#                 else :
+#                     serializer = RegisterSerializer(data = request.data)
+#                     data ={}
+#                     if serializer.is_valid():
+#                         user = await sync_to_async(serializer.create)(request.data)
+#                         logger.info(user)
+#                         if user.role == 'sponsor':
+#                             print(user.role)
+#                             asyncio.create_task(addDonorToZoho(user))
+#                         data['message'] = "Successfully registered"
+#                         data['email'] = user.email
+#                         data['name'] = user.name
+#                         data['id'] = user.id
+#                         token = Token.objects.get(user=user).key
+#                         data['token'] = token
+#                         return Response({"status":True,"response":{"data":data}})
+#                     else:
+#                         logger.debug(serializer.errors)
+#                         data = serializer.errors
+#                     return Response({"status":False,"error":{"message":serializer.errors}})
+#             except IntegrityError as e:
+#                 logger.exception(str(e))
+#                 raise ValidationError({"400": f'{str(e)}'})
+#             except KeyError as e:
+#                 logger.exception(str(e))
+#                 raise ValidationError({"400": f'Field {str(e)} missing'})
+#     async def post(self,request):
+#         try:
+#             response = await self.async_post(request)
+#             return response
+#         except Exception as e:
+#             logger.exception(str(e))
+#             return Response({"status": False, "error": {"message": str(e)}}) 
+#     @classmethod
+#     def as_view(cls, **kwargs):
+#         view = super().as_view(**kwargs)
+#         return async_view(view)
+    
+#     def async_view(func):
+#         @types.coroutine
+#         def wrapper(*args, **kwargs):
+#             func = sync_to_async(func)
+#             return await func(*args, **kwargs)
+#         return wrapper
+
+
+    
 class CreateUserView(APIView):
     permission_classes= [AllowAny]
     authentication_classes =[]
@@ -111,19 +644,19 @@ class CreateUserView(APIView):
             raise ValidationError({"400": f'Field {str(e)} missing'})
 
 class CheckEmail(APIView):
-    permission_classes= [AllowAny]
-    authentication_classes =[]
-    def post(self,request):
-        try :
-            if User.objects.filter(email = request.data.get("email",None)).exists():
-                return Response({"status":False,"error":"User already exists with the given email"})
-            else :
-                return Response({"status":True,"message":"No Account Exists with the given email"})
-        except Exception as e:
-            logger.exception(traceback.format_exc())
-            logger.exception(str(e))
-            # raise APIException
-            return Response({"status":False,"error":{"message":str(e)}})
+        permission_classes= [AllowAny]
+        authentication_classes =[]
+        def post(self,request):
+            try :
+                if User.objects.filter(email = request.data.get("email",None)).exists():
+                    return Response({"status":False,"error":"User already exists with the given email"})
+                else :
+                    return Response({"status":True,"message":"No Account Exists with the given email"})
+            except Exception as e:
+                logger.exception(traceback.format_exc())
+                logger.exception(str(e))
+                # raise APIException
+                return Response({"status":False,"error":{"message":str(e)}})
 
 class OTPMandatorySignup(APIView):
     permission_classes= [AllowAny]
@@ -153,6 +686,9 @@ class OTPMandatorySignup(APIView):
                         logger.info("OTP Verified Successfully")
                         logger.info("OTP Verified Successfully")
                         user = serializer.create(request.data)
+                        if user.role == 'sponsor':
+                            print(user.role)
+                            addDonorToZohov1(user)
                         logger.info("OTP Verified Successfully"+str(user))
                         data['message'] = "Successfully registered a new user"
                         data['email'] = user.email
@@ -702,6 +1238,7 @@ class UpdateSponsorProfile(APIView):
                             serializer.save()
                             sponsor = Sponsor.objects.get(pk = data.get('id'))
                             res = ClientSponsorProfle(sponsor)
+                            updateDonortoZoho(res)
                             logger.info(res.data)
                             return Response({"status":True,"response":{"data":res.data}})
                         except Exception as e:
@@ -1447,6 +1984,7 @@ class UpdateApplicationProfile(APIView):
                     try:
                         application_data.save()
                         serializer = ApplicationDetailsSerializer(application_data)
+                        updateChildtoZoho(serializer.data)
                         return Response({"status":True,"data":serializer.data})
                     except IntegrityError as e:
                         logger.exception(str(e))
@@ -1486,6 +2024,7 @@ class AddApplicationProfile(APIView):
                 data = Application.objects.create(**data)
                 logger.info(data)
                 serializer = ApplicationDetailsSerializer(data)
+                addChildToZoho(serializer.data)
                 return Response({"status":True,"response":{"data":serializer.data}})
             except IntegrityError as e:
                 logger.exception(str(e))
@@ -1535,6 +2074,7 @@ class UpdateEducationalDetails(APIView):
                 application_data.save()
                 serializer = ApplicationDetailsSerializer(application_data)
                 logger.info(serializer.data)
+                updateChildtoZoho(serializer.data)
                 return Response({"status":True,"response":{"data":serializer.data}})
             except IntegrityError as e:
                 logger.exception(str(e))
@@ -1635,6 +2175,7 @@ class UpdateGuardianDetails(APIView):
             try:
                 application_data.save()
                 serializer = ApplicationDetailsSerializer(application_data)
+                updateChildtoZoho(serializer.data)
                 return Response({"status":True,"response":{"data":serializer.data}})
             except IntegrityError as e:
                 logger.exception(str(e))
@@ -1746,3 +2287,85 @@ class updateSubscriptionDetails(APIView):
             logger.exception("Exception occured :"+str(e))
 
 
+global ZOHO_ACCESS_TOKEN 
+global ZOHO_USER_MODULE_ACCESS_TOKEN
+ZOHO_ACCESS_TOKEN = "1000.615d83a2de4d8fde1211a264468dde1e.93b964add710ac76d2c79cf3ced766f9"
+def refreshToken():
+    url = "https://accounts.zoho.in/oauth/v2/token"
+    formFields = {"client_id": settings.ZOHO_CLIENT_ID, "client_secret" : settings.ZOHO_CLIENT_SECRET, "refresh_token" : settings.ZOHO_REFRESH_TOKEN, "grant_type" : "refresh_token"}
+    response = requests.post(url, data = formFields)
+    logger.info("response"+str(response))
+    if response.status_code == requests.codes.ok : 
+        token = response.json()
+        logger.info("token"+str(token))
+        ZOHO_ACCESS_TOKEN = token.get('access_token')
+        logger.info("Zoho-oauthtoken"+str(token.get('access_token')))
+        # return ZOHO_ACCESS_TOKEN
+    else :
+      logger.error("Error from zoho token api")
+    #   return ""
+
+ACCESS_TOKEN_CACHE_KEY = 'access_token'
+ACCESS_TOKEN_REFRESH_THRESHOLD_MINUTES = 5
+
+def get_access_token():
+    access_token = cache.get(ACCESS_TOKEN_CACHE_KEY)
+    print(access_token)
+    if access_token is None:
+        # Token not found in cache, obtain new token from API
+        url = "https://accounts.zoho.in/oauth/v2/token"
+        formFields = {"client_id": settings.ZOHO_CLIENT_ID, "client_secret" : settings.ZOHO_CLIENT_SECRET, "refresh_token" : settings.ZOHO_REFRESH_TOKEN, "grant_type" : "refresh_token"}
+        response = requests.post(url, data = formFields)
+        logger.info("response"+str(response.json()))
+        if response.status_code == requests.codes.ok :
+            res = response.json()
+            print(res)
+            logger.info("token"+str(res))
+            access_token = res.get('access_token')
+            logger.info("Zoho-oauthtoken"+str(res.get('access_token'))) 
+
+            # Store token in cache with expiration time
+            expiration_time = datetime.now() + timedelta(seconds=res.get('expires_in'))
+            cache.set(ACCESS_TOKEN_CACHE_KEY, access_token, timeout=(expiration_time - datetime.now()).seconds)
+        else :
+            logger.error("Error from zoho token api")
+            logger.error(str(response.json()))
+    else:
+        # Token found in cache, check if it's close to expiring
+        expiration_time = cache.get(ACCESS_TOKEN_CACHE_KEY + '_expiration')
+        if expiration_time is not None and (expiration_time - datetime.now()).seconds < ACCESS_TOKEN_REFRESH_THRESHOLD_MINUTES * 60:
+            # Token is close to expiring, obtain new token from API
+            url = "https://accounts.zoho.in/oauth/v2/token"
+            formFields = {"client_id": settings.ZOHO_CLIENT_ID, "client_secret" : settings.ZOHO_CLIENT_SECRET, "refresh_token" : settings.ZOHO_REFRESH_TOKEN, "grant_type" : "refresh_token"}
+            response = requests.post(url, data = formFields)
+            logger.info("response"+str(response))
+            if response.status_code == requests.codes.ok :
+                res = response.json()
+                logger.info("token"+str(res))
+                access_token = res.get('access_token')
+                logger.info("Zoho-oauthtoken"+str(res.get('access_token'))) 
+
+                # Update token in cache with new expiration time
+                expiration_time = datetime.now() + timedelta(seconds=res.get('expires_in'))
+                cache.set(ACCESS_TOKEN_CACHE_KEY, access_token, timeout=(expiration_time - datetime.now()).seconds)
+            else :
+                logger.error("Error from zoho token api")
+                logger.error(str(response.json()))
+    print(access_token)
+    return access_token
+
+
+def refreshUserModuleToken():
+    url = "https://accounts.zoho.in/oauth/v2/token"
+    formFields = {"client_id" : settings.ZOHO_CLIENT_ID, "client_secret" : settings.ZOHO_CLIENT_SECRET, "refresh_token" : settings.ZOHO_USER_MODULE_REFRESH_TOKEN, "grant_type" : "refresh_token"}
+    response = requests.post(url, data =formFields)
+    if response.status_code == requests.codes.ok :
+        token = response.json()
+        logger.info("token"+str(token))
+        ZOHO_USER_MODULE_ACCESS_TOKEN = token.get('access_token')
+        logger.info("Zoho-user_module_access_token"+str(token.get('access_token')))
+        return ZOHO_USER_MODULE_ACCESS_TOKEN
+    else :
+      logger.error("Error from zoho token api")
+      return ""
+    

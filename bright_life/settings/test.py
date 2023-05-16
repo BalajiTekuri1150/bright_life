@@ -84,6 +84,18 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
 
+# Zoho Configurations
+ZOHO_CLIENT_ID = config('ZOHO_CLIENT_ID')
+ZOHO_CLIENT_SECRET =config('ZOHO_CLIENT_SECRET')
+ZOHO_REFRESH_TOKEN =config('ZOHO_REFRESH_TOKEN')
+ZOHO_USER_MODULE_REFRESH_TOKEN =config('ZOHO_USER_MODULE_REFRESH_TOKEN')
+ZOHO_API_INITIAL_PATH =config('ZOHO_API_INITIAL_PATH')
+
+# Stripe Configurations
+STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY')
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY')
+STRIPE_PRODUCT_ID = config('STRIPE_PRODUCT_ID')
+
 
 # ASW S3 configuration
 
@@ -98,3 +110,21 @@ AWS_S3_SIGNATURE_VERSION = "s3v4"
 AWS_QUERYSTRING_AUTH = False
 
 STATIC_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/static/'
+
+
+# SOCIALACCOUNT_PROVIDERS = {
+#     'google': {
+#         'APP': {
+#             'client_id': 'YOUR_CLIENT_ID',
+#             'secret': 'YOUR_CLIENT_SECRET',
+#             'key': ''
+#         },
+#         'SCOPE': [
+#             'profile',
+#             'email'
+#         ],
+#         'AUTH_PARAMS': {
+#             'access_type': 'online'
+#         }
+#     }
+# }

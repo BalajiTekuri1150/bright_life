@@ -35,7 +35,19 @@ INSTALLED_APPS = [
     'corsheaders',
     'storages',
     'django_extensions',
+
+    # 'dj_rest_auth'
+    # 'allauth',
+    # 'allauth.account',
+    # 'allauth.socialaccount',
+    #'allauth.socialaccount.providers.google',
 ]
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
 
 REST_FRAMEWORK = {
 
