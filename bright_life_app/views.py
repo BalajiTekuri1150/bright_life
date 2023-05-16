@@ -228,8 +228,8 @@ class CreateCheckoutSession(APIView):
         else:
             plan_id = request.data.get('plan_id')
             session = stripe.checkout.Session.create(
-                success_url='http://127.0.0.1:8000/success',
-                cancel_url='http://127.0.0.1:8000/cancel',
+                success_url='https://brightlife-copy.vercel.app/',
+                cancel_url='https://brightlife-copy.vercel.app/login/logins',
                 payment_method_types=['card'],
                 mode='subscription',
                 subscription_data={
