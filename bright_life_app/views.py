@@ -208,8 +208,8 @@ class CreateCheckoutSession(APIView):
         # Create a one-time payment or recurring subscription
         if not is_recurring:
             session = stripe.checkout.Session.create(
-                success_url='http://127.0.0.1:8000/success',
-                cancel_url='http://127.0.0.1:8000/cancel',
+                success_url='https://brightlife-copy.vercel.app/',
+                cancel_url='https://brightlife-copy.vercel.app/login/logins',
                 payment_method_types=['card'],
                 line_items=[{
                     'price_data': {
@@ -250,6 +250,8 @@ class CreateCheckoutSession(APIView):
 
 
 class UpdateStripeSubscriptionDetails(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes =[]
     def post(self,request):
         payload = request.body
         logger.info("UpdateStripeSubscriptionDetails method reached")
