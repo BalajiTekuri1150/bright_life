@@ -1236,6 +1236,7 @@ class UpdateSponsorProfile(APIView):
                     userInstance.email = user.get('email',userInstance.email)
                     userInstance.name = user.get('name',userInstance.name)
                     userInstance.last_updated_by = request.user.name
+                    data['zoho_id'] = instance.zoho_id
                     serializer = SponsorProfileSerializer(instance,data=data)
                     if serializer.is_valid() :
                         try:
@@ -1279,6 +1280,7 @@ class UpdateSponsorDetails(APIView):
                     logger.info("instance"+str(sponsorData.data))
                     logger.info(sponsorData.data['user']['id'])
                     data['user'] = sponsorData.data['user']['id']
+                    data['zoho_id'] = instance.zoho_id
                     serializer = SponsorProfileSerializer(instance,data=data)
                     if serializer.is_valid() :
                         try:
