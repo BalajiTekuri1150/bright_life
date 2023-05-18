@@ -85,7 +85,7 @@ class SignupSerializer(serializers.Serializer):
         {"password": "Password fields didn't match."})
     return attrs
   def create(self, validated_data):
-    print("serializer method reached")
+    logger.info("serializer method reached")
     user = User.objects.create(
       name=validated_data['name'],
       email=validated_data['email'],
@@ -423,7 +423,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
     write_only_fields = ['is_active','created_date','created_by','last_updated_date','last_updated_by']
 
   def create(self,validated_data):
-    print(validated_data)
+    logger.info("validated_data :"+str(validated_data))
     validated_data["child_type_id"] = validated_data.pop("child_type")
     validated_data["gender_id"] = validated_data.pop("gender")
     return Application.objects.create(**validated_data)

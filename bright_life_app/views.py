@@ -173,7 +173,7 @@ class ListDonationPlans(APIView):
         for plan in plans:
             amount_decimal = Decimal(plan.unit_amount_decimal)
             formatted_price = format_price(amount_decimal / 100, plan.currency)
-            print(formatted_price)
+            logger.info("formatted_price :"+str(application))
             if plan.type == 'recurring':
                 plan_data.append({
                     'id': plan.id,
@@ -199,9 +199,8 @@ class CreateCheckoutSession(APIView):
     authentication_classes =[]
     def post(self,request):
         sponsor_email = request.data.get('email')
-        print(sponsor_email)
         amount = request.data.get('amount')
-        print(amount)
+        logger.info("amount :"+str(amount))
         is_recurring = request.data.get('recurring') == 'true'
         currency = request.data.get('currency')
 
@@ -244,7 +243,6 @@ class CreateCheckoutSession(APIView):
                 customer_email=sponsor_email,
             )
         logger.info("sessionId:"+str(session.id))
-        print("sessionId:"+str(session.id))
         return Response({'sessionId': session.id})
     
 
@@ -315,11 +313,11 @@ async def addDonorToZoho(user):
             logger.info("response :"+response)
             if response.status == 401:
                 error_response = await response.json()
-                print(error_response)
+                logger.info(str(error_response))
                 logger.error("error while syncing to zoho :"+str(error_response))
             else :
                 logger.info("success response :"+str(response.json()))
-                print("response :"+str(response.json()))
+                logger.info("response :"+str(response.json()))
 
 
 def addDonorToZohov1(user):
@@ -340,13 +338,13 @@ def addDonorToZohov1(user):
     logger.info("response :"+str(response))
     if response['data'][0]['status'] == "success" :
         logger.info("success response :"+str(response))
-        print("response :"+str(response))
+        logger.info("response :"+str(response))
         try:
             zoho_id = response['data'][0]['details']['id']
-            print(zoho_id)
-            print("is_sponsor_exists "+str(Sponsor.objects.filter(user=user).exists))
+            logger.info(str(zoho_id))
+            logger.info("is_sponsor_exists "+str(Sponsor.objects.filter(user=user).exists))
             sponsor = Sponsor.objects.filter(user=user).first()
-            print(sponsor)
+            logger.info("sponsor :"+sponsor)
             if sponsor:
                 sponsor.zoho_id = zoho_id
                 sponsor.save()
@@ -357,12 +355,12 @@ def addDonorToZohov1(user):
             logger.exception(str(e))
     else :
         error_response = response
-        print(error_response)
+        logger.info(error_response)
         logger.error("error while syncing to zoho :"+str(error_response))
 
 def updateDonortoZoho(donor):
     url = 'https://zohoapis.in/crm/v2.1/Donors'
-    print("child :"+str(donor))
+    logger.info("child :"+str(donor))
     if 'zoho_id' in donor and donor['zoho_id']:
         url = url+"/"+donor['zoho_id']
         filters={
@@ -373,7 +371,7 @@ def updateDonortoZoho(donor):
             ]
         }
         if 'user' in donor and donor['user']:
-            print(donor['user'])
+            logger.info(str(donor['user']))
             if 'name' in donor['user']:
                 filters['data'][0]["Name1"]= donor['user']['name']
             if 'email' in donor['user'] :
@@ -384,7 +382,7 @@ def updateDonortoZoho(donor):
             filters['data'][0]["Donor_Country"] = donor['country']
         if 'address' in donor and donor['address']:
             filters['data'][0]["Donor_Address"] = donor['address']
-        print(filters)
+        logger.info(str(filters))
         token = get_access_token()
         logger.info("token :"+token)
         headers = {'Authorization': 'Zoho-oauthtoken '+token}
@@ -393,10 +391,10 @@ def updateDonortoZoho(donor):
         logger.info("response :"+str(response))
         if response['data'][0]['status'] == "success" :
             logger.info("success response :"+str(response))
-            print("response :"+str(response))
+            logger.info("response :"+str(response))
         else :
             error_response = response
-            print(error_response)
+            logger.info(error_response)
             logger.error("error while syncing to zoho :"+str(error_response))
     else :
         logger.error("zoho_id not found for donor"+str(donor['id']))
@@ -406,7 +404,7 @@ def updateDonortoZoho(donor):
 
 def addChildToZoho(child):
     url = 'https://zohoapis.in/crm/v2.1/Childs'
-    print("child :"+str(child))
+    logger.info("child :"+str(child))
     filters={
         'data':[
         {
@@ -415,7 +413,7 @@ def addChildToZoho(child):
         ]
         }
     if 'name' in child and child['name']:
-        print(child['name'])
+        logger.info(child['name'])
         filters['data'][0]["Name"]= child['name']
     if 'guardian' in child and child['guardian'] :
         if 'user' in child['guardian'] and child['guardian']['user'] :
@@ -438,7 +436,7 @@ def addChildToZoho(child):
         filters['data'][0]["Address"] = child['region']
     if 'birthday' in child and child['birthday'] :
         filters['data'][0]["DOB"] = child['birthday']
-    print(filters)
+    logger.info("filters:"+str(filters))
     token = get_access_token()
     logger.info("token :"+token)
     headers = {'Authorization': 'Zoho-oauthtoken '+token}
@@ -447,12 +445,12 @@ def addChildToZoho(child):
     logger.info("response :"+str(response))
     if response['data'][0]['status'] == "success" :
         logger.info("success response :"+str(response))
-        print("response :"+str(response))
+        logger.info("response :"+str(response))
         try:
             zoho_id = response['data'][0]['details']['id']
-            print(zoho_id)
+            logger.info(str(zoho_id))
             application = Application.objects.filter(id = child['id']).first()
-            print(application)
+            logger.info("application:"+str(application))
             if application:
                 application.zoho_id = zoho_id
                 application.save()
@@ -463,13 +461,13 @@ def addChildToZoho(child):
             logger.exception(str(e))
     else :
         error_response = response
-        print(error_response)
+        logger.info(str(error_response))
         logger.error("error while syncing to zoho :"+str(error_response))
 
 
 def updateChildtoZoho(child):
     url = 'https://zohoapis.in/crm/v2.1/Childs'
-    print("child :"+str(child))
+    logger.info("child :"+str(child))
     if 'zoho_id' in child and child['zoho_id']:
         url = url+"/"+child['zoho_id']
         filters={
@@ -480,7 +478,7 @@ def updateChildtoZoho(child):
         ]
         }
         if 'name' in child and child['name']:
-            print(child['name'])
+            logger.info(child['name'])
             filters['data'][0]["Name"]= child['name']
         if 'guardian' in child and child['guardian'] :
             if 'user' in child['guardian'] and child['guardian']['user'] :
@@ -503,7 +501,7 @@ def updateChildtoZoho(child):
             filters['data'][0]["Address"] = child['region']
         if 'birthday' in child and child['birthday'] :
             filters['data'][0]["DOB"] = child['birthday']
-        print(filters)
+        logger.info("filters:"+str(filters))
         token = get_access_token()
         logger.info("token :"+token)
         headers = {'Authorization': 'Zoho-oauthtoken '+token}
@@ -512,10 +510,10 @@ def updateChildtoZoho(child):
         logger.info("response :"+str(response))
         if response['data'][0]['status'] == "success" :
             logger.info("success response :"+str(response))
-            print("response :"+str(response))
+            logger.info("response :"+str(response))
         else :
             error_response = response
-            print(error_response)
+            logger.info(error_response)
             logger.error("error while syncing to zoho :"+str(error_response))
     else :
         logger.error("zoho_id not found for child"+str(child['id']))
@@ -692,7 +690,7 @@ class OTPMandatorySignup(APIView):
                         logger.info("OTP Verified Successfully")
                         user = serializer.create(request.data)
                         if user.role == 'sponsor':
-                            print(user.role)
+                            logger.info(user.role)
                             addDonorToZohov1(user)
                         logger.info("OTP Verified Successfully"+str(user))
                         data['message'] = "Successfully registered a new user"
@@ -2317,7 +2315,6 @@ ACCESS_TOKEN_REFRESH_THRESHOLD_MINUTES = 5
 
 def get_access_token():
     access_token = cache.get(ACCESS_TOKEN_CACHE_KEY)
-    print(access_token)
     if access_token is None:
         # Token not found in cache, obtain new token from API
         url = "https://accounts.zoho.in/oauth/v2/token"
@@ -2326,7 +2323,7 @@ def get_access_token():
         logger.info("response"+str(response.json()))
         if response.status_code == requests.codes.ok :
             res = response.json()
-            print(res)
+            logger.info("res :"+str(res))
             logger.info("token"+str(res))
             access_token = res.get('access_token')
             logger.info("Zoho-oauthtoken"+str(res.get('access_token'))) 
@@ -2358,7 +2355,6 @@ def get_access_token():
             else :
                 logger.error("Error from zoho token api")
                 logger.error(str(response.json()))
-    print(access_token)
     return access_token
 
 

@@ -182,10 +182,8 @@ class listCustomers(APIView):
             else :
                 return Response({"status":False,"error":"No customers found"})
         except InvalidRequestError as e:
-            print(str(e))
             return Response({"status":False,"error":{"message":str(e)}})
         except Exception as e:
-            print(str(e))
             return Response({"status":False,"error":{"message":str(e)}})
 
 
