@@ -223,6 +223,11 @@ class CreateCheckoutSession(APIView):
                 }],
                 mode='payment',
                 customer_email=sponsor_email,
+                metadata={
+                    'email': sponsor_email,
+                    'custom_amount': amount,
+                    # 'payment_intent_id': 'your_custom_id_here',
+                }
             )
         else:
             plan_id = request.data.get('plan_id')
@@ -234,13 +239,14 @@ class CreateCheckoutSession(APIView):
                 subscription_data={
                     'items': [{
                         'plan': plan_id,
-                    }],
-                    'metadata': {
-                        'email': sponsor_email,
-                        'custom_amount': amount,
-                    },
+                    }]
                 },
                 customer_email=sponsor_email,
+                metadata={
+                'email': sponsor_email,
+                'custom_amount': amount,
+                # 'payment_intent_id': 'your_custom_id_here',
+                }
             )
         logger.info("sessionId:"+str(session.id))
         return Response({'sessionId': session.id})
@@ -248,7 +254,7 @@ class CreateCheckoutSession(APIView):
 
 
 class UpdateStripeSubscriptionDetails(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (AllowAny,)
     authentication_classes =[]
     def post(self,request):
         payload = request.body
