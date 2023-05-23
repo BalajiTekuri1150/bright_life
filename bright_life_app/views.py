@@ -203,6 +203,7 @@ class CreateCheckoutSession(APIView):
         logger.info("amount :"+str(amount))
         is_recurring = request.data.get('recurring') == 'true'
         currency = request.data.get('currency')
+        # sponsorship_id = request.data.get('sponsorship_id')
 
         # Create a one-time payment or recurring subscription
         if not is_recurring:
@@ -248,8 +249,27 @@ class CreateCheckoutSession(APIView):
                 # 'payment_intent_id': 'your_custom_id_here',
                 }
             )
+        logger.info("Session Data :"+str(session))
+        subscription_id = session.subscription
+        logger.info("subscription id :"+subscription_id)
         logger.info("sessionId:"+str(session.id))
+        # sponsorship = Sponsorship.objects.get(pk = sponsorship_id)
+        # reference_id = session.id
+        # payment_date = datetime.fromtimestamp(tz=get_current_timezone())            
+        # next_billing_at = ""
+        # billing_period_unit = "year"
+        # subscription_data = json.loads(session)
+        # payment_status = "payment_started"
+        # Sponsorship.objects.filter(id = sponsorship_id).update(status = payment_status)
+        # applicationId = Sponsorship.objects.filter(id = sponsorship_id).first().application_id
+        # logger.info(applicationId)
+        # status =EnumApplicationStatus.objects.get(status = 'scholorship-received').id
+        # logger.info(status)
+        # Application.objects.filter(id = applicationId).update(status= status)
+        # res = SponsorshipPayment.objects.create(sponsorship = sponsorship,reference_id = reference_id,payment_date = payment_date,currency = currency,amount = amount,next_billing_at = next_billing_at,billing_period_unit = billing_period_unit,subscription_data = subscription_data)
         return Response({'sessionId': session.id})
+
+        
     
 
 
