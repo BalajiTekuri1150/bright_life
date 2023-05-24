@@ -201,7 +201,8 @@ class CreateCheckoutSession(APIView):
         sponsor_email = request.data.get('email')
         amount = request.data.get('amount')
         logger.info("amount :"+str(amount))
-        is_recurring = request.data.get('recurring') == True
+        logger.info("is_recurring :"+str(self.cleaned_data.get('recurring')))
+        is_recurring = self.cleaned_data.get('recurring') == True
         logger.info("is_recurring :"+is_recurring)
         currency = request.data.get('currency')
         # sponsorship_id = request.data.get('sponsorship_id')
