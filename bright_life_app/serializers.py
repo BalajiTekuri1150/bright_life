@@ -579,6 +579,14 @@ class ClientSponsorshipPaymentSerializer(serializers.ModelSerializer):
   def to_representation(self, instance):
     data = super().to_representation(instance)
     return {k: v for k, v in data.items() if v is not None and v != ""}
+  
+
+class CheckoutSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+    currency = serializers.CharField(max_length=3)
+    is_recurring = serializers.BooleanField()
+    plan_id = serializers.CharField(max_length=50)
 
 
 

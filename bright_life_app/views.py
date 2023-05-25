@@ -24,7 +24,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework.exceptions import APIException
 
-from .serializers import ApplicationDetailsSerializer, ApplicationDocumentsSerializer, ChildStatusSerializer, ChildTypeSerializer, ClientGuardianProfle, ClientSponsorshipPaymentSerializer, ClientUserSerializer, DocumentTypeSerializer, GuardianProfileSerializer, RegisterSerializer,SponsorProfileSerializer,CountrySerializer,CountryStateSerializer,ApplicationProfileSerializer,EducationDetailsSerializer,ApplicationSerializer, SponsorshipPaymentSerializer, UpdateSponsorshipSerializer, UserRoleSerializer,GenderSerializer,BankDetailsSerializer,ClientBankDetailsSerializer,ClientSponsorProfle,ClientApplicationDocumentsSerializer, UserSerializer,LoginSerializer,SponsorshipSerializer,ClientSponsorshipSerializer,ChangePasswordSerializer,VerifyOTPSerializer,OTPSerializer,UpdatePasswordSerializer,SignupSerializer,ChargebeeUserSerializer
+from .serializers import ApplicationDetailsSerializer, ApplicationDocumentsSerializer, ChildStatusSerializer, ChildTypeSerializer, ClientGuardianProfle, ClientSponsorshipPaymentSerializer, ClientUserSerializer, DocumentTypeSerializer, GuardianProfileSerializer, RegisterSerializer,SponsorProfileSerializer,CountrySerializer,CountryStateSerializer,ApplicationProfileSerializer,EducationDetailsSerializer,ApplicationSerializer, SponsorshipPaymentSerializer, UpdateSponsorshipSerializer, UserRoleSerializer,GenderSerializer,BankDetailsSerializer,ClientBankDetailsSerializer,ClientSponsorProfle,ClientApplicationDocumentsSerializer, UserSerializer,LoginSerializer,SponsorshipSerializer,ClientSponsorshipSerializer,ChangePasswordSerializer,VerifyOTPSerializer,OTPSerializer,UpdatePasswordSerializer,SignupSerializer,ChargebeeUserSerializer,CheckoutSerializer
 
 from django.db import IntegrityError
 
@@ -198,78 +198,86 @@ class CreateCheckoutSession(APIView):
     permission_classes= [AllowAny]
     authentication_classes =[]
     def post(self,request):
-        sponsor_email = request.data.get('email')
-        amount = request.data.get('amount')
-        logger.info("amount :"+str(amount))
-        logger.info("is_recurring :"+str(self.cleaned_data.get('recurring')))
-        is_recurring = self.cleaned_data.get('recurring') == True
-        logger.info("is_recurring :"+is_recurring)
-        currency = request.data.get('currency')
-        # sponsorship_id = request.data.get('sponsorship_id')
+        serializer = CheckoutSerializer(data=request.data)
+        if serializer.is_valid():
+            # Access validated data using serializer.validated_data
+            sponsor_email = serializer.validated_data['email']
+            amount = serializer.validated_data['amount']
+            currency = serializer.validated_data['currency']
+            is_recurring = serializer.validated_data['is_recurring']
+            plan_id = serializer.validated_data['plan_id']
+            logger.info("amount :"+str(amount))
+            logger.info("is_recurring :"+str(is_recurring))
+            sponsorship_id = request.data.get('sponsorship_id')
 
-        # Create a one-time payment or recurring subscription
-        if not is_recurring:
-            session = stripe.checkout.Session.create(
-                success_url='https://brightlife-copy.vercel.app/',
-                cancel_url='https://brightlife-copy.vercel.app/login/logins',
-                payment_method_types=['card'],
-                line_items=[{
-                    'price_data': {
-                        'currency': currency,
-                        'unit_amount': int(amount) * 100,  # Amount in cents
-                        'product_data': {
-                            'name': 'One-time Donation',
-                            'description': 'Thank you for your support!',
+            # Create a one-time payment or recurring subscription
+            if not is_recurring:
+                session = stripe.checkout.Session.create(
+                    success_url='https://brightlife-copy.vercel.app/',
+                    cancel_url='https://brightlife-copy.vercel.app/login/logins',
+                    payment_method_types=['card'],
+                    line_items=[{
+                        'price_data': {
+                            'currency': currency,
+                            'unit_amount': int(amount) * 100,  # Amount in cents
+                            'product_data': {
+                                'name': 'One-time Donation',
+                                'description': 'Thank you for your support!',
+                            },
                         },
-                    },
-                    'quantity': 1,
-                }],
-                mode='payment',
-                customer_email=sponsor_email,
-                metadata={
-                    'email': sponsor_email,
-                    'custom_amount': amount,
+                        'quantity': 1,
+                    }],
+                    mode='payment',
+                    customer_email=sponsor_email,
+                    payment_intent_data= {
+                        'metadata':{
+                        'email': sponsor_email,
+                        'custom_amount': amount,
+                        'sponsorship_id' :sponsorship_id
+                        }
+                    }
+                )
+            else:
+                plan_id = request.data.get('plan_id')
+                session = stripe.checkout.Session.create(
+                    success_url='https://brightlife-copy.vercel.app/',
+                    cancel_url='https://brightlife-copy.vercel.app/login/logins',
+                    payment_method_types=['card'],
+                    mode='subscription',
+                    line_items=[{
+                        'plan_id': plan_id,
+                        'custom_amount': amount,
+                        'quantity': 1,
+                    }],
+                    customer_email=sponsor_email,
+                    subscription_data= {
+                        'metadata' :{
+                        'email': sponsor_email,
+                        'custom_amount': amount,
+                        'sponsorship_id':sponsorship_id
+                        }
                     # 'payment_intent_id': 'your_custom_id_here',
-                }
-            )
-        else:
-            plan_id = request.data.get('plan_id')
-            session = stripe.checkout.Session.create(
-                success_url='https://brightlife-copy.vercel.app/',
-                cancel_url='https://brightlife-copy.vercel.app/login/logins',
-                payment_method_types=['card'],
-                mode='subscription',
-                subscription_data={
-                    'items': [{
-                        'plan': plan_id,
-                    }]
-                },
-                customer_email=sponsor_email,
-                metadata={
-                'email': sponsor_email,
-                'custom_amount': amount,
-                # 'payment_intent_id': 'your_custom_id_here',
-                }
-            )
-        logger.info("Session Data :"+str(session))
-        subscription_id = session.subscription.id if session.subscription else None
-        logger.info("subscription id :"+subscription_id)
-        logger.info("sessionId:"+str(session.id))
-        # sponsorship = Sponsorship.objects.get(pk = sponsorship_id)
-        # reference_id = session.id
-        # payment_date = datetime.fromtimestamp(tz=get_current_timezone())            
-        # next_billing_at = ""
-        # billing_period_unit = "year"
-        # subscription_data = json.loads(session)
-        # payment_status = "payment_started"
-        # Sponsorship.objects.filter(id = sponsorship_id).update(status = payment_status)
-        # applicationId = Sponsorship.objects.filter(id = sponsorship_id).first().application_id
-        # logger.info(applicationId)
-        # status =EnumApplicationStatus.objects.get(status = 'scholorship-received').id
-        # logger.info(status)
-        # Application.objects.filter(id = applicationId).update(status= status)
-        # res = SponsorshipPayment.objects.create(sponsorship = sponsorship,reference_id = reference_id,payment_date = payment_date,currency = currency,amount = amount,next_billing_at = next_billing_at,billing_period_unit = billing_period_unit,subscription_data = subscription_data)
-        return Response({'sessionId': session.id})
+                    }
+                )
+            logger.info("Session Data :"+str(session))
+            logger.info("sessionId:"+str(session.id))
+            # sponsorship = Sponsorship.objects.get(pk = sponsorship_id)
+            # reference_id = session.id
+            # payment_date = datetime.fromtimestamp(tz=get_current_timezone())            
+            # next_billing_at = ""
+            # billing_period_unit = "year"
+            # subscription_data = json.loads(session)
+            # payment_status = "payment_started"
+            # Sponsorship.objects.filter(id = sponsorship_id).update(status = payment_status)
+            # applicationId = Sponsorship.objects.filter(id = sponsorship_id).first().application_id
+            # logger.info(applicationId)
+            # status =EnumApplicationStatus.objects.get(status = 'scholorship-received').id
+            # logger.info(status)
+            # Application.objects.filter(id = applicationId).update(status= status)
+            # res = SponsorshipPayment.objects.create(sponsorship = sponsorship,reference_id = reference_id,payment_date = payment_date,currency = currency,amount = amount,next_billing_at = next_billing_at,billing_period_unit = billing_period_unit,subscription_data = subscription_data)
+            return Response({'sessionId': session.id})
+        else :
+            return Response({"status":False,"error :":{"message :":serializer.errors}})
 
         
     
