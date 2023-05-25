@@ -208,7 +208,7 @@ class CreateCheckoutSession(APIView):
             plan_id = serializer.validated_data['plan_id']
             logger.info("amount :"+str(amount))
             logger.info("is_recurring :"+str(is_recurring))
-            sponsorship_id = request.data.get('sponsorship_id')
+            sponsorship_id = serializer.validated_data['sponsorship_id']
 
             # Create a one-time payment or recurring subscription
             if not is_recurring:

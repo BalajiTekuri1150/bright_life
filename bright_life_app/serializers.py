@@ -587,6 +587,7 @@ class CheckoutSerializer(serializers.Serializer):
     currency = serializers.CharField(max_length=3)
     is_recurring = serializers.BooleanField()
     plan_id = serializers.CharField(max_length=50)
+    sponsorship_id = serializers.IntegerField()
 
 
 
