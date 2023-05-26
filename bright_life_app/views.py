@@ -287,6 +287,7 @@ class UpdateStripeSubscriptionDetails(APIView):
     authentication_classes =[]
     def post(self,request):
         payload = request.body
+        data = json.loads(payload)
         logger.info("UpdateStripeSubscriptionDetails method reached")
         logger.info("payload :"+str(payload))
         sig_header = request.META['HTTP_STRIPE_SIGNATURE']
@@ -294,12 +295,11 @@ class UpdateStripeSubscriptionDetails(APIView):
 
         try:
             event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
-            data = event['data']
+            event_data = event['data']
             event_type = event['type']
 
             if event_type == 'payment_intent.succeeded':
                 logger.info("payment_intent.succeeded")
-                logger.info("payload :"+str(payload))
                 logger.info("event data :"+str(data)) 
                 # applicationId = Sponsorship.objects.filter(id = sponsorship_id).first().application_id
                 # logger.info(applicationId)
