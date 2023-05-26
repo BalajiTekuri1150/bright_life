@@ -298,6 +298,7 @@ class UpdateStripeSubscriptionDetails(APIView):
             event_type = event['type']
 
             if event_type == 'payment_intent.succeeded':
+                logger.info("payment_intent.succeeded")
                 logger.info("payload :"+str(payload))
                 logger.info("event data :"+data) 
                 # applicationId = Sponsorship.objects.filter(id = sponsorship_id).first().application_id
@@ -310,6 +311,7 @@ class UpdateStripeSubscriptionDetails(APIView):
                 # Update the payment status in the database based on the payment_intent_id
 
             elif event_type == 'payment_intent.payment_failed':
+                logger.info("payment_intent.payment_failed")
                 logger.info("payload :"+str(payload))
                 # Payment failed, update payment status in the database
                 payment_intent_id = data['object']['id']
