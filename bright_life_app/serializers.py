@@ -525,7 +525,7 @@ class SponsorshipSerializer(serializers.ModelSerializer):
 class ClientSponsorshipSerializer(serializers.ModelSerializer):
   class Meta:
     model = Sponsorship
-    fields = ['id','sponsor_id','application_id','start_date','status','pledge_date']
+    fields = ['id','sponsor_id','application_id','start_date','status','pledge_date','reference_id','next_billing_at','subscription_data']
 
   def to_representation(self, instance):
     data = super().to_representation(instance)
@@ -588,6 +588,7 @@ class CheckoutSerializer(serializers.Serializer):
     is_recurring = serializers.BooleanField()
     plan_id = serializers.CharField(max_length=50)
     sponsorship_id = serializers.IntegerField()
+    interval = serializers.CharField(required=False, allow_blank=True)
 
 
 

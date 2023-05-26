@@ -209,6 +209,12 @@ class CreateCheckoutSession(APIView):
             logger.info("amount :"+str(amount))
             logger.info("is_recurring :"+str(is_recurring))
             sponsorship_id = serializer.validated_data['sponsorship_id']
+            interval = serializer.validated_data['interval']
+            metadata = {
+                'email': sponsor_email,
+                'custom_amount': amount,
+                'sponsorship_id': sponsorship_id
+            }
 
             # Create a one-time payment or recurring subscription
             if not is_recurring:
@@ -219,7 +225,7 @@ class CreateCheckoutSession(APIView):
                     line_items=[{
                         'price_data': {
                             'currency': currency,
-                            'unit_amount': int(amount) * 100,  # Amount in cents
+                            'unit_amount': int(amount * 100),  # Amount in cents
                             'product_data': {
                                 'name': 'One-time Donation',
                                 'description': 'Thank you for your support!',
@@ -229,53 +235,46 @@ class CreateCheckoutSession(APIView):
                     }],
                     mode='payment',
                     customer_email=sponsor_email,
-                    payment_intent_data= {
-                        'metadata':{
-                        'email': sponsor_email,
-                        'custom_amount': amount,
-                        'sponsorship_id' :sponsorship_id
-                        }
-                    }
+                    description=str(sponsorship_id),
                 )
             else:
-                plan_id = request.data.get('plan_id')
                 session = stripe.checkout.Session.create(
                     success_url='https://brightlife-copy.vercel.app/',
                     cancel_url='https://brightlife-copy.vercel.app/login/logins',
                     payment_method_types=['card'],
                     mode='subscription',
                     line_items=[{
-                        'plan_id': plan_id,
-                        'custom_amount': amount,
+                        'price': plan_id,
                         'quantity': 1,
                     }],
                     customer_email=sponsor_email,
-                    subscription_data= {
-                        'metadata' :{
-                        'email': sponsor_email,
-                        'custom_amount': amount,
-                        'sponsorship_id':sponsorship_id
-                        }
+                    client_reference_id=str(sponsorship_id),
                     # 'payment_intent_id': 'your_custom_id_here',
-                    }
                 )
-            logger.info("Session Data :"+str(session))
-            logger.info("sessionId:"+str(session.id))
-            # sponsorship = Sponsorship.objects.get(pk = sponsorship_id)
-            # reference_id = session.id
-            # payment_date = datetime.fromtimestamp(tz=get_current_timezone())            
-            # next_billing_at = ""
-            # billing_period_unit = "year"
-            # subscription_data = json.loads(session)
-            # payment_status = "payment_started"
-            # Sponsorship.objects.filter(id = sponsorship_id).update(status = payment_status)
-            # applicationId = Sponsorship.objects.filter(id = sponsorship_id).first().application_id
-            # logger.info(applicationId)
-            # status =EnumApplicationStatus.objects.get(status = 'scholorship-received').id
-            # logger.info(status)
-            # Application.objects.filter(id = applicationId).update(status= status)
-            # res = SponsorshipPayment.objects.create(sponsorship = sponsorship,reference_id = reference_id,payment_date = payment_date,currency = currency,amount = amount,next_billing_at = next_billing_at,billing_period_unit = billing_period_unit,subscription_data = subscription_data)
-            return Response({'sessionId': session.id})
+            try:
+                logger.info("Session Data :"+str(session))
+                logger.info("sessionId:"+str(session.id))
+                sponsorship = Sponsorship.objects.get(pk = sponsorship_id)
+                session_reference_id = session.id
+                payment_date = datetime.now()
+                logger.info("payment_date :"+str(payment_date))            
+                next_billing_at = ""
+                billing_period_unit = interval
+                subscription_data = json.loads(str(session))
+                payment_status = session.payment_status
+                sponsorship.status =payment_status
+                sponsorship.subscription_data = subscription_data,
+                sponsorship.reference_id = session_reference_id
+                sponsorship.save()
+                # applicationId = Sponsorship.objects.filter(id = sponsorship_id).first().application_id
+                # logger.info(applicationId)
+                # status =EnumApplicationStatus.objects.get(status = 'scholorship-received').id
+                # logger.info(status)
+                # Application.objects.filter(id = applicationId).update(status= status)
+                # res = SponsorshipPayment.objects.create(sponsorship = sponsorship,reference_id = reference_id,payment_date = payment_date,currency = currency,amount = amount,next_billing_at = next_billing_at,billing_period_unit = billing_period_unit,subscription_data = subscription_data)
+                return Response({'sessionId': session.id})
+            except Exception as e:
+                return Response({"status :":False,"error":{"message :":str(e)}})
         else :
             return Response({"status":False,"error :":{"message :":serializer.errors}})
 
@@ -300,6 +299,12 @@ class UpdateStripeSubscriptionDetails(APIView):
 
             if event_type == 'payment_intent.succeeded':
                 logger.info("payload :"+str(payload))
+                logger.info("event data :"+data) 
+                # applicationId = Sponsorship.objects.filter(id = sponsorship_id).first().application_id
+                # logger.info(applicationId)
+                # status =EnumApplicationStatus.objects.get(status = 'scholorship-received').id
+                # logger.info(status)
+                # Application.objects.filter(id = applicationId).update(status= status)
                 # Payment succeeded, update payment status in the database
                 payment_intent_id = data['object']['id']
                 # Update the payment status in the database based on the payment_intent_id
@@ -2140,29 +2145,29 @@ class SponsorKid(APIView):
         data['sponsor'] = Sponsor.objects.filter(pk = data.pop("sponsor_id")).first().id
         application_id = data['application_id']
         data['application'] = data.pop("application_id")
-        if Sponsorship.objects.filter(sponsor_id =data['sponsor'],application_id = data['application']).exists():
-            return Response({"status":False,"error":{"message":"You have already sponsored for this kid"}})
+        # if Sponsorship.objects.filter(sponsor_id =data['sponsor'],application_id = data['application']).exists():
+        #     return Response({"status":False,"error":{"message":"You have already sponsored for this kid"}})
+        # else :
+        serializer = SponsorshipSerializer(data=data)
+        if serializer.is_valid():
+            try:
+                serializer.create(data)
+                # logger.info(status)
+                # ApplicationObj = Application.objects.get(pk= application_id)
+                # ApplicationObj.status_id = status
+                # ApplicationObj.last_updated_by = request.user.name
+                # ApplicationObj.save()
+                logger.info(serializer.data)
+                SponsorshipObj = Sponsorship.objects.latest('id')
+                res = ClientSponsorshipSerializer(SponsorshipObj)
+                logger.info(res.data)
+                return Response({"status":True,"response":{"data":res.data}})
+            except Exception as e:
+                logger.exception(str(e))
+                return Response({"status":False,"error":{"message":str(e)}})
         else :
-            serializer = SponsorshipSerializer(data=data)
-            if serializer.is_valid():
-                try:
-                    serializer.create(data)
-                    # logger.info(status)
-                    # ApplicationObj = Application.objects.get(pk= application_id)
-                    # ApplicationObj.status_id = status
-                    # ApplicationObj.last_updated_by = request.user.name
-                    # ApplicationObj.save()
-                    logger.info(serializer.data)
-                    SponsorshipObj = Sponsorship.objects.latest('id')
-                    res = ClientSponsorshipSerializer(SponsorshipObj)
-                    logger.info(res.data)
-                    return Response({"status":True,"response":{"data":res.data}})
-                except Exception as e:
-                    logger.exception(str(e))
-                    return Response({"status":False,"error":{"message":str(e)}})
-            else :
-                logger.error(serializer.errors)
-                return Response({"status":False,"error":{"message":serializer.errors}})
+            logger.error(serializer.errors)
+            return Response({"status":False,"error":{"message":serializer.errors}})
 
 class UpdateSponsorship(APIView):
     permission_classes = [IsAuthenticated]
