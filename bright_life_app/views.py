@@ -300,7 +300,7 @@ class UpdateStripeSubscriptionDetails(APIView):
             if event_type == 'payment_intent.succeeded':
                 logger.info("payment_intent.succeeded")
                 logger.info("payload :"+str(payload))
-                logger.info("event data :"+data) 
+                logger.info("event data :"+str(data)) 
                 # applicationId = Sponsorship.objects.filter(id = sponsorship_id).first().application_id
                 # logger.info(applicationId)
                 # status =EnumApplicationStatus.objects.get(status = 'scholorship-received').id
