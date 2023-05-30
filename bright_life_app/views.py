@@ -235,7 +235,7 @@ class CreateCheckoutSession(APIView):
                     }],
                     mode='payment',
                     customer_email=sponsor_email,
-                    description=str(sponsorship_id),
+                    # description=str(sponsorship_id),
                 )
             else:
                 session = stripe.checkout.Session.create(
