@@ -2,7 +2,7 @@ from django.urls import URLPattern, path
 
 from . import views
 
-from .views import CheckEmail, ListDocumentTypes, UpdateGuardianProfile, UpdateSponsorDetails, getApplicationDetails, RegisterUserAPIView,CountryList,GetCountryState,AddApplication,ListGender,ListChildStatus,ListChildType,ListRoles,AddBankDetails,getBankDetails,UpdateBankDetails,LogoutView,AddApplicationProfile,UpdateApplicationProfile,UpdateGuardianDetails,UpdateEducationalDetails,UpdateSponsorProfile, getGuardianProfileView,getSponsorProfileView,getApplicationDocuments,UpdateApplicationDocument,SponsoredApplications,Login,AddApplicationDocument,SponsorKid,UpdateSponsorship,UpdatePassword,GetOTP,verifyOTP,ResendOTP,ChangePassword,OTPMandatorySignup,GetOTPV2,ResendOTPV2,CreateUserView,RemoveApplicationDocuments,BulkInsertApplicationDocument,createCustomer,updateSubscriptionDetails,ListDonationPlans,CreateCheckoutSession,UpdateStripeSubscriptionDetails
+from .views import CheckEmail, ListDocumentTypes, UpdateGuardianProfile, UpdateSponsorDetails, getApplicationDetails, RegisterUserAPIView,CountryList,GetCountryState,AddApplication,ListGender,ListChildStatus,ListChildType,ListRoles,AddBankDetails,getBankDetails,UpdateBankDetails,LogoutView,AddApplicationProfile,UpdateApplicationProfile,UpdateGuardianDetails,UpdateEducationalDetails,UpdateSponsorProfile, getGuardianProfileView,getSponsorProfileView,getApplicationDocuments,UpdateApplicationDocument,SponsoredApplications,Login,AddApplicationDocument,SponsorKid,UpdateSponsorship,UpdatePassword,GetOTP,verifyOTP,ResendOTP,ChangePassword,OTPMandatorySignup,GetOTPV2,ResendOTPV2,CreateUserView,RemoveApplicationDocuments,BulkInsertApplicationDocument,createCustomer,updateSubscriptionDetails,ListDonationPlans,CreateCheckoutSession,UpdateStripeSubscriptionDetails,GoogleSignup, GoogleLogin
 
 from django.conf.urls.static import static
 from django.conf import  settings
@@ -25,6 +25,9 @@ urlpatterns =[
     path('brightlife-test.chargebee.com/api/v2/get/item/prices',getItemPricesList.as_view(),name="get-checkout-page"),
     path('brightlife-test.chargebee.com/api/v2/create/customer',createCustomer.as_view(),name="get-checkout-page"),
     path('brightlife-test.chargebee.com/api/v2/update/subscription/details',updateSubscriptionDetails.as_view(),name="get-checkout-page"),
+
+    path('brightlife/google/signup/', GoogleSignup.as_view(), name='google_signup'),
+    path('brightlife/google/login/', GoogleLogin.as_view(), name='google_login'),
 
     
     path('brightlife/get/token',views.obtain_auth_token),

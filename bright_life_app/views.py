@@ -78,7 +78,7 @@ import stripe
 import locale
 from decimal import Decimal
 
-# from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 # from dj_rest_auth.registration.views import SocialLoginView
 
 # HTML email required stuff
@@ -91,55 +91,51 @@ from decimal import Decimal
 #     allowed_schemes = [os.environ.get('APP_SCHEME'), 'http', 'https']
 
 
-# class GoogleSignup(SocialLoginView):
-#     adapter_class = GoogleOAuth2Adapter
+class GoogleSignup(APIView):
+    def post(self, request, *args, **kwargs):
+        # Call the appropriate authentication method to authenticate the user with Google
+        self.request = request
+        self.serializer = self.get_serializer(data=request.data)
+        self.serializer.is_valid(raise_exception=True)
+        self.login()
+        user = self.serializer.user
 
-#     def post(self, request, *args, **kwargs):
-#         # Call the parent post method to authenticate the user with Google
-#         response = super().post(request, *args, **kwargs)
+        # Customize the user object as needed
+        user.name = request.data.get('name')
+        user.email = request.data.get('email')
+        user.role = request.data.get('role')
+        user.save()
 
-#         # If authentication was successful, create a new user account
-#         if response.status_code == status.HTTP_200_OK:
-#             user = response.data['user']
-#             token = response.data['access_token']
+        # Generate the token
+        token = self.get_response_serializer().get_token(user)
 
-#             # Customize the user object as needed
-#             user.name = request.data.get('name')
-#             user.email = request.data.get('email')
-#             user.role = request.data.get('role')
-#             user.save()
-
-#             # Return the user object and token to the client
-#             return Response({
-#                 'user': user,
-#                 'access_token': token
-#             }, status=status.HTTP_200_OK)
-
-#         # Otherwise, return the error response
-#         return response
+        # Return the user object and token to the client
+        return Response({
+            'user': user,
+            'access_token': token
+        }, status=status.HTTP_200_OK)
 
 
 
-# class GoogleLogin(SocialLoginView):
-#     adapter_class = GoogleOAuth2Adapter
 
-#     def post(self, request, *args, **kwargs):
-#         # Call the parent post method to authenticate the user with Google
-#         response = super().post(request, *args, **kwargs)
+class GoogleLogin(APIView):
+    def post(self, request, *args, **kwargs):
+        # Call the appropriate authentication method to authenticate the user with Google
+        self.request = request
+        self.serializer = self.get_serializer(data=request.data)
+        self.serializer.is_valid(raise_exception=True)
+        self.login()
+        user = self.serializer.user
 
-#         # If authentication was successful, retrieve the user object and token
-#         if response.status_code == status.HTTP_200_OK:
-#             user = response.data['user']
-#             token = response.data['access_token']
+        # Generate the token
+        token = self.get_response_serializer().get_token(user)
 
-#             # Return the user object and token to the client
-#             return Response({
-#                 'user': user,
-#                 'access_token': token
-#             }, status=status.HTTP_200_OK)
+        # Return the user object and token to the client
+        return Response({
+            'user': user,
+            'access_token': token
+        }, status=status.HTTP_200_OK)
 
-#         # Otherwise, return the error response
-#         return response
 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -1540,7 +1536,7 @@ class getApplicationDetails(APIView,MyPaginator):
         gender = self.request.GET.get("gender",None)
         child_type = self.request.GET.get("child_type",None)
         guardian = self.request.GET.get("guardian_id",None)
-        family_income = self.request.GET.get("family_income",None)
+        family_income = self.request.GET.get("annual_income",None)
         if application_id:
             filters["id"]=application_id
         if email:
@@ -1560,8 +1556,8 @@ class getApplicationDetails(APIView,MyPaginator):
         if guardian :
             filters["guardian"] = guardian
         if family_income:
-            filters['annual_income'] = family_income
-        queryset = Application.objects.filter(**filters,is_active = True)
+            filters["annual_income__lte"] = family_income
+        queryset = Application.objects.filter(Q(is_active=True), **filters)
         page = self.paginate_queryset(queryset,request)
         serializer = ApplicationDetailsSerializer(page,many=True)
         for i in serializer.data:
@@ -2151,8 +2147,10 @@ class SponsorKid(APIView):
         data['created_by'] = request.user.name
         data['last_updated_by'] = request.user.name
         data['sponsor'] = Sponsor.objects.filter(pk = data.pop("sponsor_id")).first().id
-        application_id = data['application_id']
-        data['application'] = data.pop("application_id")
+        if 'application_id' in data:
+            application_id = data['application_id']
+            logger.info("application_id :"+str(application_id))
+            data['application'] = data.pop("application_id")
         # if Sponsorship.objects.filter(sponsor_id =data['sponsor'],application_id = data['application']).exists():
         #     return Response({"status":False,"error":{"message":"You have already sponsored for this kid"}})
         # else :

@@ -107,19 +107,19 @@ STATIC_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/static/'
 CHARGEBEE_APIKEY = config('CHARGEBEE_APIKEY')
 CHARGEBEE_SITENAME = config('CHARGEBEE_SITENAME')
 
-# SOCIALACCOUNT_PROVIDERS = {
-#     'google': {
-#         'APP': {
-#             'client_id': 'YOUR_CLIENT_ID',
-#             'secret': 'YOUR_CLIENT_SECRET',
-#             'key': ''
-#         },
-#         'SCOPE': [
-#             'profile',
-#             'email'
-#         ],
-#         'AUTH_PARAMS': {
-#             'access_type': 'online'
-#         }
-#     }
-# }
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': config('GOOGLE_CLIENT_ID'),
+            'secret': config('GOOGLE_CLIENT_SECRET'),
+            'key': ''
+        },
+        'SCOPE': [
+            'profile',
+            'email'
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online'
+        }
+    }
+}

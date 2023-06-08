@@ -37,10 +37,10 @@ INSTALLED_APPS = [
     'django_extensions',
 
     # 'dj_rest_auth'
-    # 'allauth',
-    # 'allauth.account',
-    # 'allauth.socialaccount',
-    #'allauth.socialaccount.providers.google',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 ]
 
 AUTHENTICATION_BACKENDS = [

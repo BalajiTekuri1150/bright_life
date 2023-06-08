@@ -513,13 +513,15 @@ class ClientApplicationDocumentsSerializer(serializers.ModelSerializer):
     return {k: v for k, v in data.items() if v is not None and v != ""}
 
 class SponsorshipSerializer(serializers.ModelSerializer):
+  application = serializers.PrimaryKeyRelatedField(queryset=Application.objects.all(), required=False, allow_null=True)
   class Meta:
     model = Sponsorship
     fields = "__all__"
 
   def create(self,validated_data):
     validated_data["sponsor_id"] = validated_data.pop("sponsor")
-    validated_data["application_id"] = validated_data.pop("application")
+    if "application" in validated_data:
+            validated_data["application_id"] = validated_data.pop("application")
     return Sponsorship.objects.create(**validated_data)
 
 class ClientSponsorshipSerializer(serializers.ModelSerializer):
