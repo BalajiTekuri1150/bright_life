@@ -1281,6 +1281,8 @@ class UpdateSponsorProfile(APIView):
                     userInstance.last_updated_by = request.user.name
                     data['zoho_id'] = instance.zoho_id
                     serializer = SponsorProfileSerializer(instance,data=data)
+                    if User.objects.exclude(pk=userInstance.pk).filter(email=userInstance.email).exists():
+                        return Response({"status": False, "error": {"message": "Email already exists."}})
                     if serializer.is_valid() :
                         try:
                             userInstance.save()
@@ -1373,6 +1375,8 @@ class UpdateGuardianProfile(APIView):
                     userInstance.name = user.get('name',userInstance.name)
                     userInstance.last_updated_by = request.user.name
                     serializer = GuardianProfileSerializer(instance,data=data)
+                    if User.objects.exclude(pk=userInstance.pk).filter(email=userInstance.email).exists():
+                        return Response({"status": False, "error": {"message": "Email already exists."}})
                     if serializer.is_valid() :
                         try:
                             userInstance.save()
