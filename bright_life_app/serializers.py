@@ -555,7 +555,7 @@ class ApplicationDetailsSerializer(serializers.ModelSerializer):
   guardian = ClientGuardianProfle(read_only=True)
   class Meta:
     model = Application
-    fields = ["id","name","birthday","email","mobile","profile","country","state","grade","school","school_address","hobbies","aspirations","achievements","about","profession","annual_income","family_members","extra_allowance","gender","child_type","status","guardian","zoho_id"]
+    fields = ["id","name","birthday","email","mobile","age","profile","country","state","grade","school","school_address","hobbies","aspirations","achievements","about","profession","annual_income","family_members","extra_allowance","gender","child_type","status","guardian","zoho_id"]
 
   def to_representation(self, instance):
     data = super().to_representation(instance)
