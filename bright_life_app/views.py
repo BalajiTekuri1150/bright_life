@@ -196,6 +196,7 @@ class CreateCheckoutSession(APIView):
     def post(self,request):
         serializer = CheckoutSerializer(data=request.data)
         if serializer.is_valid():
+            current_url = request.build_absolute_uri()
             # Access validated data using serializer.validated_data
             sponsor_email = serializer.validated_data['email']
             amount = serializer.validated_data['amount']
@@ -217,7 +218,7 @@ class CreateCheckoutSession(APIView):
                 if not is_recurring:
                     session = stripe.checkout.Session.create(
                         success_url='https://brightlife-client-duplicate-changes.vercel.app/',
-                        cancel_url='https://brightlife-client-duplicate-changes.vercel.app/home_files/donate',
+                        cancel_url=current_url,
                         payment_method_types=['card'],
                         line_items=[{
                             'price_data': {
@@ -236,8 +237,8 @@ class CreateCheckoutSession(APIView):
                     )
                 else:
                     session = stripe.checkout.Session.create(
-                        success_url='https://brightlife-copy.vercel.app/',
-                        cancel_url='https://brightlife-copy.vercel.app/login/logins',
+                        success_url='https://brightlife-client-duplicate-changes.vercel.app/',
+                        cancel_url=current_url,
                         payment_method_types=['card'],
                         mode='subscription',
                         line_items=[{
