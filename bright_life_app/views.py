@@ -90,51 +90,153 @@ from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 
 #     allowed_schemes = [os.environ.get('APP_SCHEME'), 'http', 'https']
 
+from django.contrib.auth import get_user_model
 
 class GoogleSignup(APIView):
+    permission_classes= [AllowAny]
+    authentication_classes =[]
     def post(self, request, *args, **kwargs):
-        # Call the appropriate authentication method to authenticate the user with Google
-        self.request = request
-        self.serializer = self.get_serializer(data=request.data)
-        self.serializer.is_valid(raise_exception=True)
-        self.login()
-        user = self.serializer.user
+        User = get_user_model()
 
-        # Customize the user object as needed
-        user.name = request.data.get('name')
-        user.email = request.data.get('email')
-        user.role = request.data.get('role')
-        user.save()
+        # Get the data from the request
+        name = request.data.get('name')
+        email = request.data.get('email')
+        role = request.data.get('role')
+        try:
+            if User.objects.filter(email = email).exists():
+                return Response({"status":False,"error":"User already exists with the given email"})
+            else :
+                # Create a new user
+                user = User.objects.create_user(name=name, email=email,role=role)
 
-        # Generate the token
-        token = self.get_response_serializer().get_token(user)
+                # Customize the user object as needed
+                user.name = name
+                user.role = role
+                user.save()
+
+                # Generate the token
+                token = user.auth_token
+
+                # Return the user object and token to the client
+                return Response({
+                    'user': {
+                        'id': user.id,
+                        'name': user.name,
+                        'email': user.email,
+                        'role': user.role,
+                        # Include any other desired user fields
+                    },
+                    'access_token': token.key  # Assuming token is a model instance with a 'key' field
+                }, status=status.HTTP_200_OK)
+        except IntegrityError as e:
+            logger.exception(str(e))
+            raise ValidationError({"400": f'{str(e)}'})
+        except KeyError as e:
+            logger.exception(str(e))
+            raise ValidationError({"400": f'Field {str(e)} missing'})
+
+        
+
+
+# class GoogleSignup(APIView):
+#     def post(self, request, *args, **kwargs):
+#         # Call the appropriate authentication method to authenticate the user with Google
+#         self.request = request
+#         self.serializer = self.get_serializer(data=request.data)
+#         self.serializer.is_valid(raise_exception=True)
+#         self.login()
+#         user = self.serializer.user
+
+#         # Customize the user object as needed
+#         user.name = request.data.get('name')
+#         user.email = request.data.get('email')
+#         user.role = request.data.get('role')
+#         user.save()
+
+#         # Generate the token
+#         token = self.get_response_serializer().get_token(user)
+
+#         # Return the user object and token to the client
+#         return Response({
+#             'user': user,
+#             'access_token': token
+#         }, status=status.HTTP_200_OK)
+
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.contrib.auth import get_user_model, authenticate, login
+from google.oauth2 import id_token
+from google.auth.transport import requests
+
+class GoogleSignIn(APIView):
+    permission_classes= [AllowAny]
+    authentication_classes =[]
+    def post(self, request):
+        token = request.data.get('token')
+
+        # Verify the Google ID token
+        client_id = settings.GOOGLE_CLIENT_ID
+        try:
+            id_info = id_token.verify_oauth2_token(token, requests.Request(), client_id)
+            if id_info['aud'] != client_id:
+                raise ValueError('Invalid client ID')
+        except ValueError as e:
+            return Response({'error': 'Invalid token'}, status=400)
+
+        email = id_info['email']
+        User = get_user_model()
+
+        # Check if a user with the provided email exists in your database
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=404)
+
+        # Authenticate and log in the user
+        user = authenticate(request, username=email, password=email)
+        if user is None:
+            return Response({'error': 'Invalid credentials'}, status=400)
+        login(request, user)
+
+        # Generate a token for the authenticated user
+        token = user.auth_token
 
         # Return the user object and token to the client
         return Response({
-            'user': user,
-            'access_token': token
-        }, status=status.HTTP_200_OK)
+            'user': {
+                'id': user.id,
+                'name': user.name,
+                'email': user.email,
+                'role': user.role,
+                # Include any other desired user fields
+            },
+            'access_token': token.key  # Assuming token is a model instance with a 'key' field
+        }, status=200)
 
 
 
 
-class GoogleLogin(APIView):
-    def post(self, request, *args, **kwargs):
-        # Call the appropriate authentication method to authenticate the user with Google
-        self.request = request
-        self.serializer = self.get_serializer(data=request.data)
-        self.serializer.is_valid(raise_exception=True)
-        self.login()
-        user = self.serializer.user
 
-        # Generate the token
-        token = self.get_response_serializer().get_token(user)
 
-        # Return the user object and token to the client
-        return Response({
-            'user': user,
-            'access_token': token
-        }, status=status.HTTP_200_OK)
+# class GoogleLogin(APIView):
+#     def post(self, request, *args, **kwargs):
+#         # Call the appropriate authentication method to authenticate the user with Google
+#         self.request = request
+#         self.serializer = self.get_serializer(data=request.data)
+#         self.serializer.is_valid(raise_exception=True)
+#         self.login()
+#         user = self.serializer.user
+
+#         # Generate the token
+#         token = self.get_response_serializer().get_token(user)
+
+#         # Return the user object and token to the client
+#         return Response({
+#             'user': user,
+#             'access_token': token
+#         }, status=status.HTTP_200_OK)
 
 
 
