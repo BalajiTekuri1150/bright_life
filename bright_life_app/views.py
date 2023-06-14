@@ -113,22 +113,21 @@ class GoogleSignup(APIView):
                 user.name = name
                 user.role = role
                 user.save()
-
                 # Generate the token
                 token = user.auth_token
-
-                # Return the user object and token to the client
-                # return Response({
-                #     'user': {
-                #         'id': user.id,
-                #         'name': user.name,
-                #         'email': user.email,
-                #         'role': user.role,
-                #         # Include any other desired user fields
-                #     },
-                #     'access_token': token.key,
-                #     'status':True  # Assuming token is a model instance with a 'key' field
-                # }, status=status.HTTP_200_OK)
+                if user.role == "sponsor":
+                    try:
+                        sponsorProfile = Sponsor.objects.create(user_id=user.id,created_by=user.name,last_updated_by=user.name)
+                    except Exception as e:
+                        user.delete()
+                        return str(e)
+                elif user.role == "guardian":
+                    try:
+                        guardianProfile = Guardian.objects.create(user_id=user.id,created_by=user.name,last_updated_by=user.name)
+                    except Exception as e:
+                        logger.exception(str(e))
+                        user.delete()
+                        return str(e)
                 return Response({"status":True,"response":{
                     "data":{
                         'message': 'Successfully registered',
@@ -204,28 +203,56 @@ class GoogleSignIn(APIView):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            return Response({'error': 'User not found'}, status=404)
+            logger.debug("Account doesn't exist with the given email :"+str(email))
+            return Response({"status":False,"message":"Account doesn't exist with the given email"})
 
         # Authenticate and log in the user
         user = authenticate(request, username=email, password=email)
-        if user is None:
-            return Response({'error': 'Invalid credentials'}, status=400)
         login(request, user)
 
         # Generate a token for the authenticated user
-        token = user.auth_token
+        # token = user.auth_token
 
-        # Return the user object and token to the client
-        return Response({
-            'user': {
-                'id': user.id,
-                'name': user.name,
-                'email': user.email,
-                'role': user.role,
-                # Include any other desired user fields
-            },
-            'access_token': token.key  # Assuming token is a model instance with a 'key' field
-        }, status=200)
+        if user:
+            if user.is_active:
+                token, created = Token.objects.get_or_create(user=user)
+                userObj = ClientUserSerializer(user)
+                logger.info(userObj.data)
+                role = userObj.data['role']
+                user_id = userObj.data['id']
+                if role == "sponsor" :
+                    if Sponsor.objects.filter(user = user_id,is_active = True).exists():
+                        logger.info("sponsor exists")
+                        sponsor_profile = Sponsor.objects.get(user = user_id)
+                        logger.info(sponsor_profile)
+                        serializer = ClientSponsorProfle(sponsor_profile)
+                        return Response({'status':True,'response':{'user':userObj.data,'sponsor' :serializer.data},'token': token.key},
+                        status=status.HTTP_200_OK)
+                    else :
+                        return Response({'status':True,'response':{'user':userObj.data},'token': token.key},
+                        status=status.HTTP_200_OK)
+                elif role == "guardian" :
+                    if Guardian.objects.filter(user = user_id,is_active = True).exists():
+                        guardian_profile = Guardian.objects.get(user = user_id,)
+                        logger.info(guardian_profile)
+                        serializer = ClientGuardianProfle(guardian_profile)
+                        return Response({'status':True,'response':{'user':userObj.data,'guardian':serializer.data},'token': token.key},
+                                status=status.HTTP_200_OK)
+                    else :
+                        return Response({'status':True,'response':{'user':userObj.data},'token': token.key},
+                                status=status.HTTP_200_OK)
+                else :
+                    return Response({'status':True,'response':{'user':userObj.data},'token': token.key},
+                                status=status.HTTP_200_OK)
+            else:
+                logger.debug("User account not active"+str(user))
+                content = {'status':False,"error":{'message': 'User account not active.'}}
+                return Response(content,
+                                status=status.HTTP_401_UNAUTHORIZED)
+        else:
+            logger.debug("Invalid Password "+str(serializer.data))
+            content = {'status':False,"error":{'message':'Invalid Credentials'}}
+            return Response(content, status=status.HTTP_401_UNAUTHORIZED)
 
 
 
