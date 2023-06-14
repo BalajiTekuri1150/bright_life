@@ -118,16 +118,28 @@ class GoogleSignup(APIView):
                 token = user.auth_token
 
                 # Return the user object and token to the client
-                return Response({
-                    'user': {
+                # return Response({
+                #     'user': {
+                #         'id': user.id,
+                #         'name': user.name,
+                #         'email': user.email,
+                #         'role': user.role,
+                #         # Include any other desired user fields
+                #     },
+                #     'access_token': token.key,
+                #     'status':True  # Assuming token is a model instance with a 'key' field
+                # }, status=status.HTTP_200_OK)
+                return Response({"status":True,"response":{
+                    "data":{
+                        'message': 'Successfully registered',
                         'id': user.id,
                         'name': user.name,
                         'email': user.email,
                         'role': user.role,
                         # Include any other desired user fields
-                    },
-                    'access_token': token.key  # Assuming token is a model instance with a 'key' field
-                }, status=status.HTTP_200_OK)
+                        'token': token.key
+                    }
+                    }}, status=status.HTTP_200_OK)
         except IntegrityError as e:
             logger.exception(str(e))
             raise ValidationError({"400": f'{str(e)}'})
