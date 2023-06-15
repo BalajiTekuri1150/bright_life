@@ -64,7 +64,7 @@ urlpatterns =[
 
     path('brightlife/check/email',CheckEmail.as_view(),name='check_email'),
 
-    # path('add/application',AddApplication.as_view(),name="add_profile"),
+    # path('add/application',AddApplication.as_view(),name="profile"),
     path('brightlife/add/application/profile',AddApplicationProfile.as_view(),name="add_profile"),
     path('brightlife/update/application/profile',UpdateApplicationProfile.as_view(),name="update_application"),
     path('brightlife/update/guardian/details',UpdateGuardianDetails.as_view(),name="update_guardian_details"),

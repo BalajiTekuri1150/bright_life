@@ -67,6 +67,8 @@ import requests
 
 import asyncio
 import aiohttp
+from rest_framework.parsers import MultiPartParser, FormParser
+from phonenumber_field.phonenumber import PhoneNumber
 
 from django.utils.decorators import classonlymethod
 from asgiref.sync import async_to_sync,sync_to_async
@@ -179,7 +181,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model, authenticate, login
 from google.oauth2 import id_token
-from google.auth.transport import requests
+from google.auth.transport import requests as request1
 
 class GoogleSignIn(APIView):
     permission_classes= [AllowAny]
@@ -190,7 +192,7 @@ class GoogleSignIn(APIView):
         # Verify the Google ID token
         client_id = settings.GOOGLE_CLIENT_ID
         try:
-            id_info = id_token.verify_oauth2_token(token, requests.Request(), client_id)
+            id_info = id_token.verify_oauth2_token(token, request1.Request(), client_id)
             if id_info['aud'] != client_id:
                 raise ValueError('Invalid client ID')
         except ValueError as e:
@@ -1430,10 +1432,23 @@ class UpdateSponsorProfile(APIView):
                             userInstance.save()
                             serializer.save()
                             sponsor = Sponsor.objects.get(pk = data.get('id'))
-                            res = ClientSponsorProfle(sponsor)
-                            updateDonortoZoho(res)
-                            logger.info(res.data)
-                            return Response({"status":True,"response":{"data":res.data}})
+                            serializer = ClientSponsorProfle(sponsor)
+                            serializeddata = serializer.data
+                            logger.info("serializeddata"+str(serializeddata))
+                            updateDonortoZoho(serializer)
+                            logger.info(serializer.data)
+                            try :
+                                profile =serializer.data.get('profile',None)
+                                if profile :
+                                    logger.info("profile :"+str(profile))
+                                    serializeddata['profile'] = profile.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
+                                    return Response({"status":True,"response":{"sponsor":serializeddata}})
+                                else :
+                                    return Response({"status":True,"response":{"sponsor":serializer.data}})
+                            except Exception as e:
+                                logger.exception(str(e))
+                            # raise APIException
+                            return Response({"status":False,"error":{"message":str(e)}})
                         except Exception as e:
                             logger.exception(traceback.format_exc())
                             logger.exception(str(e))
@@ -2216,12 +2231,34 @@ class AddApplicationProfile(APIView):
         else:
             data['created_by'] = request.user.name
             data['last_updated_by'] = request.user.name
+            payload = {}
+            for key, value in data.items():
+                new_key = str(key)
+                payload[new_key] = value
+            logger.info(payload)
+            payload["child_type_id"] = payload.pop('child_type')
+            payload["gender_id"] = payload.pop('gender')
+            # data["child_type_id"] = EnumChildType.objects.filter(id=data.get('child_type')).first().id
+            # data["gender_id"] = EnumGender.objects.filter(id=data.get('gender')).first().id
             try:
-                data = Application.objects.create(**data)
+                data = Application.objects.create(**payload)
                 logger.info(data)
                 serializer = ApplicationDetailsSerializer(data)
+                serializeddata = serializer.data
+                logger.info("serializer data :"+str(serializer.data))
                 addChildToZoho(serializer.data)
-                return Response({"status":True,"response":{"data":serializer.data}})
+                logger.info("serializer data after syncing to zoho :"+str(serializer.data))
+                try :
+                    profile =serializer.data.get('profile',None)
+                    if profile :
+                        logger.info("profile :"+str(profile))
+                        serializeddata['profile'] = profile.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
+                        return Response({"status":True,"response":{"sponsor":serializeddata}})
+                    else :
+                        return Response({"status":True,"response":{"sponsor":serializer.data}})
+                except Exception as e:
+                    logger.exception(str(e))
+                    return Response({"status":False,"error":{"message":str(e)}})
             except IntegrityError as e:
                 logger.exception(str(e))
                 raise ValidationError({"400": f'{str(e)}'})
@@ -2234,15 +2271,15 @@ class AddApplicationProfile(APIView):
 class AddApplication(APIView):
     permission_classes =[IsAuthenticated]
     authentication_classes = [TokenAuthentication]
-    serializer_class = ApplicationSerializer
-
+    # serializer_class = ApplicationProfileSerializer
+    # parser_classes = [MultiPartParser, FormParser]
     def post(self,request):
         data = self.request.data
         data['created_by'] = request.user.name
         data['last_updated_by'] = request.user.name
         data["child_type"] = EnumChildType.objects.filter(type=data.pop("child_type")).first().id
         data["gender"] = EnumGender.objects.filter(gender=data.pop("gender")).first().id
-        serializer = ApplicationSerializer(data=data)
+        serializer = ApplicationModelSerializer(data=data)
         if serializer.is_valid():
             serializer.create(data)
             logger.info(serializer.data)

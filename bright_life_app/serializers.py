@@ -369,13 +369,14 @@ class ClientGuardianProfle(serializers.ModelSerializer):
 #     validated_data["gender_id"] = EnumGender.objects.filter(gender=validated_data.pop("gender")).first().id
 #     return Application.objects.create(**validated_data)
 
+
 class ApplicationProfileSerializer(serializers.ModelSerializer):
   email = serializers.EmailField(
   validators=[UniqueValidator(queryset=Application.objects.all())]
   ,required=False)
   class Meta:
     model = Application
-    fields = ['email','name','birthday','child_type','gender','created_by','last_updated_by']
+    fields = ['email','name','birthday','profile','age','guardian_id','child_type','gender','created_by','last_updated_by']
 
   def create(self,validated_data):
     validated_data["child_type_id"] = validated_data.pop("child_type")
