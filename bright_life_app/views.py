@@ -2187,6 +2187,8 @@ class UpdateApplicationProfile(APIView):
                     application_data = Application.objects.get(id = data['id'])
                     application_data.email = data.get('email',application_data.email)
                     application_data.name = data.get('name',application_data.name)
+                    application_data.profile = data.get('profile',application_data.profile)
+                    application_data.age = data.get('age',application_data.age)
                     application_data.birthday = data.get('birthday',application_data.birthday)
                     application_data.child_type_id = data.get('child_type_id',application_data.child_type)
                     application_data.gender_id = data.get('gender_id',application_data.gender)
