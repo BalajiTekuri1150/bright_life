@@ -2236,8 +2236,8 @@ class AddApplicationProfile(APIView):
                 new_key = str(key)
                 payload[new_key] = value
             logger.info(payload)
-            payload["child_type_id"] = payload.pop('child_type')
-            payload["gender_id"] = payload.pop('gender')
+            # payload["child_type_id"] = payload.pop('child_type')
+            # payload["gender_id"] = payload.pop('gender')
             # data["child_type_id"] = EnumChildType.objects.filter(id=data.get('child_type')).first().id
             # data["gender_id"] = EnumGender.objects.filter(id=data.get('gender')).first().id
             try:
@@ -2253,9 +2253,9 @@ class AddApplicationProfile(APIView):
                     if profile :
                         logger.info("profile :"+str(profile))
                         serializeddata['profile'] = profile.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
-                        return Response({"status":True,"response":{"sponsor":serializeddata}})
+                        return Response({"status":True,"response":{"data":serializeddata}})
                     else :
-                        return Response({"status":True,"response":{"sponsor":serializer.data}})
+                        return Response({"status":True,"response":{"data":serializer.data}})
                 except Exception as e:
                     logger.exception(str(e))
                     return Response({"status":False,"error":{"message":str(e)}})
