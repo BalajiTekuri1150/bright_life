@@ -185,14 +185,15 @@ from google.auth.transport import requests as request1
 
 class GoogleSignIn(APIView):
     permission_classes= [AllowAny]
-    authentication_classes =[]
     def post(self, request):
         token = request.data.get('token')
 
         # Verify the Google ID token
         client_id = settings.GOOGLE_CLIENT_ID
+        logger.info("client_id :"+str(client_id))
         try:
             id_info = id_token.verify_oauth2_token(token, request1.Request(), client_id)
+            logger.info("id_info :"+str(id_info))
             if id_info['aud'] != client_id:
                 raise ValueError('Invalid client ID')
         except ValueError as e:
