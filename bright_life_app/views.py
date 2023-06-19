@@ -187,6 +187,7 @@ class GoogleSignIn(APIView):
     permission_classes= [AllowAny]
     def post(self, request):
         token = request.data.get('token')
+        logger.info("token :"+str(token))
 
         # Verify the Google ID token
         client_id = settings.GOOGLE_CLIENT_ID
