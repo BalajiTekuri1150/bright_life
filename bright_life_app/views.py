@@ -198,6 +198,7 @@ class GoogleSignIn(APIView):
             if id_info['aud'] != client_id:
                 raise ValueError('Invalid client ID')
         except ValueError as e:
+            logger.exception("exception :"+str(e))
             return Response({'error': 'Invalid token'}, status=400)
 
         email = id_info['email']
