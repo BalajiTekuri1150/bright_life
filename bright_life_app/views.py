@@ -211,7 +211,7 @@ class GoogleSignIn(APIView):
                     # user = authenticate(request, email=email)
                     if user is not None:
                         logger.info("after authentication :"+str(user))
-                        login(request, user)
+                        # login(request, user)
 
                         # Generate a token for the authenticated user
                         # token = user.auth_token
@@ -266,7 +266,7 @@ class GoogleSignIn(APIView):
                     return Response({"status":False,"error":{"message":"Error while authenticating","details":str(e)}})
         except ValueError as e:
             logger.exception("exception :"+str(e))
-            return Response({'error': 'Invalid token'}, status=400)
+            return Response({'error': 'Invalid token or Token Expired'}, status=400)
 
 
 
