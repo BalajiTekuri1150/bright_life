@@ -208,7 +208,7 @@ class GoogleSignIn(APIView):
                     user = User.objects.get(email=email)
                     logger.info("user :"+str(user))
                     # Authenticate and log in the user
-                    user = authenticate(request, email=email)
+                    user = authenticate(request, username=email, password=None, backend='allauth.account.auth_backends.AuthenticationBackend')
                     login(request, user)
 
                     # Generate a token for the authenticated user
