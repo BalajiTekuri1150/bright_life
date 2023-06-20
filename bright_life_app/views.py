@@ -208,7 +208,7 @@ class GoogleSignIn(APIView):
                     user = User.objects.get(email=email)
                     logger.info("user :"+str(user))
                     # Authenticate and log in the user
-                    user = authenticate(request, username=email, password=None, backend='allauth.account.auth_backends.AuthenticationBackend')
+                    user = authenticate(request, username=email, password=None, backend='django.contrib.auth.backends.ModelBackend')
                     login(request, user)
 
                     # Generate a token for the authenticated user
