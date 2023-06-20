@@ -209,6 +209,7 @@ class GoogleSignIn(APIView):
                     logger.info("user :"+str(user))
                     # Authenticate and log in the user
                     user = authenticate(request, username=email, password=None, backend='allauth.account.auth_backends.AuthenticationBackend')
+                    logger.info("after authentication :"+str(user))
                     login(request1, user)
 
                     # Generate a token for the authenticated user
@@ -257,6 +258,9 @@ class GoogleSignIn(APIView):
                 except User.DoesNotExist:
                     logger.debug("Account doesn't exist with the given email :"+str(email))
                     return Response({"status":False,"message":"Account doesn't exist with the given email"})
+                except Exception as e:
+                    logger.error("Exception occured :"+str(e))
+                    return Response({"status":False,"error":{"message":"Error while authenticating","details":str(e)}})
         except ValueError as e:
             logger.exception("exception :"+str(e))
             return Response({'error': 'Invalid token'}, status=400)
