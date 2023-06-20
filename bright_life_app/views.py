@@ -209,52 +209,55 @@ class GoogleSignIn(APIView):
                     logger.info("user :"+str(user))
                     # Authenticate and log in the user
                     user = authenticate(request, username=email, password=None, backend='allauth.account.auth_backends.AuthenticationBackend')
-                    logger.info("after authentication :"+str(user))
-                    login(request, user)
+                    if user is not None:
+                        logger.info("after authentication :"+str(user))
+                        login(request, user)
 
-                    # Generate a token for the authenticated user
-                    # token = user.auth_token
+                        # Generate a token for the authenticated user
+                        # token = user.auth_token
 
-                    if user:
-                        if user.is_active:
-                            token, created = Token.objects.get_or_create(user=user)
-                            userObj = ClientUserSerializer(user)
-                            logger.info(userObj.data)
-                            role = userObj.data['role']
-                            user_id = userObj.data['id']
-                            if role == "sponsor" :
-                                if Sponsor.objects.filter(user = user_id,is_active = True).exists():
-                                    logger.info("sponsor exists")
-                                    sponsor_profile = Sponsor.objects.get(user = user_id)
-                                    logger.info(sponsor_profile)
-                                    serializer = ClientSponsorProfle(sponsor_profile)
-                                    return Response({'status':True,'response':{'user':userObj.data,'sponsor' :serializer.data},'token': token.key},
-                                    status=status.HTTP_200_OK)
+                        if user:
+                            if user.is_active:
+                                token, created = Token.objects.get_or_create(user=user)
+                                userObj = ClientUserSerializer(user)
+                                logger.info(userObj.data)
+                                role = userObj.data['role']
+                                user_id = userObj.data['id']
+                                if role == "sponsor" :
+                                    if Sponsor.objects.filter(user = user_id,is_active = True).exists():
+                                        logger.info("sponsor exists")
+                                        sponsor_profile = Sponsor.objects.get(user = user_id)
+                                        logger.info(sponsor_profile)
+                                        serializer = ClientSponsorProfle(sponsor_profile)
+                                        return Response({'status':True,'response':{'user':userObj.data,'sponsor' :serializer.data},'token': token.key},
+                                        status=status.HTTP_200_OK)
+                                    else :
+                                        return Response({'status':True,'response':{'user':userObj.data},'token': token.key},
+                                        status=status.HTTP_200_OK)
+                                elif role == "guardian" :
+                                    if Guardian.objects.filter(user = user_id,is_active = True).exists():
+                                        guardian_profile = Guardian.objects.get(user = user_id,)
+                                        logger.info(guardian_profile)
+                                        serializer = ClientGuardianProfle(guardian_profile)
+                                        return Response({'status':True,'response':{'user':userObj.data,'guardian':serializer.data},'token': token.key},
+                                                status=status.HTTP_200_OK)
+                                    else :
+                                        return Response({'status':True,'response':{'user':userObj.data},'token': token.key},
+                                                status=status.HTTP_200_OK)
                                 else :
                                     return Response({'status':True,'response':{'user':userObj.data},'token': token.key},
-                                    status=status.HTTP_200_OK)
-                            elif role == "guardian" :
-                                if Guardian.objects.filter(user = user_id,is_active = True).exists():
-                                    guardian_profile = Guardian.objects.get(user = user_id,)
-                                    logger.info(guardian_profile)
-                                    serializer = ClientGuardianProfle(guardian_profile)
-                                    return Response({'status':True,'response':{'user':userObj.data,'guardian':serializer.data},'token': token.key},
-                                            status=status.HTTP_200_OK)
-                                else :
-                                    return Response({'status':True,'response':{'user':userObj.data},'token': token.key},
-                                            status=status.HTTP_200_OK)
-                            else :
-                                return Response({'status':True,'response':{'user':userObj.data},'token': token.key},
-                                            status=status.HTTP_200_OK)
+                                                status=status.HTTP_200_OK)
+                            else:
+                                logger.debug("User account not active"+str(user))
+                                content = {'status':False,"error":{'message': 'User account not active.'}}
+                                return Response(content,
+                                                status=status.HTTP_401_UNAUTHORIZED)
                         else:
-                            logger.debug("User account not active"+str(user))
-                            content = {'status':False,"error":{'message': 'User account not active.'}}
-                            return Response(content,
-                                            status=status.HTTP_401_UNAUTHORIZED)
+                            logger.debug("Invalid Password "+str(serializer.data))
+                            content = {'status':False,"error":{'message':'Invalid Credentials'}}
+                            return Response(content, status=status.HTTP_401_UNAUTHORIZED)
                     else:
-                        logger.debug("Invalid Password "+str(serializer.data))
-                        content = {'status':False,"error":{'message':'Invalid Credentials'}}
-                        return Response(content, status=status.HTTP_401_UNAUTHORIZED)
+                        return Response({'status': False, 'error': {'message': 'Invalid credentials'}}, status=status.HTTP_401_UNAUTHORIZED)
                 except User.DoesNotExist:
                     logger.debug("Account doesn't exist with the given email :"+str(email))
                     return Response({"status":False,"message":"Account doesn't exist with the given email"})
