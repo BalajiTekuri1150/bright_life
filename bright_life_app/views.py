@@ -206,9 +206,9 @@ class GoogleSignIn(APIView):
                 # Check if a user with the provided email exists in your database
                 try:
                     user = User.objects.get(email=email)
-                    logger.info("user :"+str(User))
+                    logger.info("user :"+str(user))
                     # Authenticate and log in the user
-                    user = authenticate(request, username=email, password=email)
+                    user = authenticate(request, email=email)
                     login(request, user)
 
                     # Generate a token for the authenticated user
