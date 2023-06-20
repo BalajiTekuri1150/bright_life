@@ -181,7 +181,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model, authenticate, login
 from google.oauth2 import id_token
-from google.auth.transport import requests as request1
+from google.auth.transport.requests import Request
 
 class GoogleSignIn(APIView):
     permission_classes= [AllowAny]
@@ -193,7 +193,7 @@ class GoogleSignIn(APIView):
         client_id = settings.GOOGLE_CLIENT_ID
         logger.info("client_id :"+str(client_id))
         try:
-            id_info = id_token.verify_oauth2_token(token, request1.Request(), client_id)
+            id_info = id_token.verify_oauth2_token(token, Request, client_id)
             logger.info("id_info :"+str(id_info))
             if id_info['aud'] != client_id:
                 raise ValueError('Invalid client ID')
@@ -210,7 +210,7 @@ class GoogleSignIn(APIView):
                     # Authenticate and log in the user
                     user = authenticate(request, username=email, password=None, backend='allauth.account.auth_backends.AuthenticationBackend')
                     logger.info("after authentication :"+str(user))
-                    login(request1, user)
+                    login(Request, user)
 
                     # Generate a token for the authenticated user
                     # token = user.auth_token
