@@ -203,10 +203,13 @@ class GoogleSignIn(APIView):
 
         email = id_info['email']
         User = get_user_model()
+        logger.info("email :"+email)
+        logger.info("user :"+str(User))
 
         # Check if a user with the provided email exists in your database
         try:
             user = User.objects.get(email=email)
+            logger.info("user :"+str(User))
         except User.DoesNotExist:
             logger.debug("Account doesn't exist with the given email :"+str(email))
             return Response({"status":False,"message":"Account doesn't exist with the given email"})
