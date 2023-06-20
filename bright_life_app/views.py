@@ -208,7 +208,7 @@ class GoogleSignIn(APIView):
                     user = User.objects.get(email=email)
                     logger.info("user :"+str(user))
                     # Authenticate and log in the user
-                    user = authenticate(request, username=email, password=None, backend='allauth.account.auth_backends.AuthenticationBackend')
+                    user = authenticate(request, email=email, password=None, backend='allauth.account.auth_backends.AuthenticationBackend')
                     if user is not None:
                         logger.info("after authentication :"+str(user))
                         login(request, user)
