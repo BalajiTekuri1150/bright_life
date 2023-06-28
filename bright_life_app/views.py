@@ -114,6 +114,7 @@ class GoogleSignup(APIView):
                 # Customize the user object as needed
                 user.name = name
                 user.role = role
+                user.is_email_verified = True
                 user.save()
                 # Generate the token
                 token = user.auth_token
