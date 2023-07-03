@@ -24,7 +24,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework.exceptions import APIException
 
-from .serializers import ApplicationDetailsSerializer, ApplicationDocumentsSerializer, ChildStatusSerializer, ChildTypeSerializer, ClientGuardianProfle, ClientSponsorshipPaymentSerializer, ClientUserSerializer, DocumentTypeSerializer, GuardianProfileSerializer, RegisterSerializer,SponsorProfileSerializer,CountrySerializer,CountryStateSerializer,ApplicationProfileSerializer,EducationDetailsSerializer,ApplicationSerializer, SponsorshipPaymentSerializer, UpdateSponsorshipSerializer, UserRoleSerializer,GenderSerializer,BankDetailsSerializer,ClientBankDetailsSerializer,ClientSponsorProfle,ClientApplicationDocumentsSerializer, UserSerializer,LoginSerializer,SponsorshipSerializer,ClientSponsorshipSerializer,ChangePasswordSerializer,VerifyOTPSerializer,OTPSerializer,UpdatePasswordSerializer,SignupSerializer,ChargebeeUserSerializer,CheckoutSerializer
+from .serializers import ApplicationDetailsSerializer, ApplicationDocumentsSerializer, ChildStatusSerializer, ChildTypeSerializer, ClientGuardianProfle, ClientSponsorshipPaymentSerializer, ClientUserSerializer, DocumentTypeSerializer, GuardianProfileSerializer, RegisterSerializer,SponsorProfileSerializer,CountrySerializer,CountryStateSerializer,ApplicationProfileSerializer,EducationDetailsSerializer,ApplicationSerializer, SponsorshipPaymentSerializer, UpdateSponsorshipSerializer, UserRoleSerializer,GenderSerializer,BankDetailsSerializer,ClientBankDetailsSerializer,ClientSponsorProfle,ClientApplicationDocumentsSerializer, UserSerializer,LoginSerializer,SponsorshipSerializer,ClientSponsorshipSerializer,ChangePasswordSerializer,VerifyOTPSerializer,OTPSerializer,UpdatePasswordSerializer,SignupSerializer,ChargebeeUserSerializer,CheckoutSerializer,ClientApplicationDetailsSerializer
 
 from django.db import IntegrityError
 
@@ -719,6 +719,127 @@ def updateChildtoZoho(child):
             logger.error("error while syncing to zoho :"+str(error_response))
     else :
         logger.error("zoho_id not found for child"+str(child['id']))
+
+
+
+def addSponsorShipToZoho(sponsorship):
+    url = 'https://zohoapis.in/crm/v2.1/SponsorShips'
+    logger.info("sponsorship :"+str(sponsorship))
+    filters={
+        'data':[
+        {
+        
+        }
+        ]
+        }
+    if 'sponsor_id' in sponsorship and sponsorship['sponsor_id'] :
+        filters['data'][0]["sponsor_id"] = sponsorship['sponsor_id']
+    if 'application_id' in sponsorship and sponsorship['application_id'] :
+        filters['data'][0]["application_id"] = sponsorship['application_id']
+    if 'status' in sponsorship and sponsorship['status'] :
+        filters['data'][0]["status"] = sponsorship['status']
+    if 'start_date' in sponsorship and sponsorship['start_date'] :
+        filters['data'][0]["start_date"] = sponsorship['start_date']
+    if 'pledge_date' in sponsorship and sponsorship['pledge_date'] :
+        filters['data'][0]["pledge_date"] = sponsorship['pledge_date']
+    if 'amount' in sponsorship and sponsorship['amount'] :
+        filters['data'][0]["amount"] = sponsorship['amount']
+    if 'currency_code' in sponsorship and sponsorship['currency_code'] :
+        filters['data'][0]["currency_code"] = sponsorship['currency_code']
+    if 'billing_period' in sponsorship and sponsorship['billing_period'] :
+        filters['data'][0]["billing_period"] = sponsorship['billing_period']
+    if 'type' in sponsorship and sponsorship['type'] :
+        filters['data'][0]["type"] = sponsorship['type']
+    if 'reference_id' in sponsorship and sponsorship['reference_id'] :
+        filters['data'][0]["reference_id"] = sponsorship['reference_id']
+    if 'next_billing_at' in sponsorship and sponsorship['next_billing_at'] :
+        filters['data'][0]["next_billing_at"] = sponsorship['next_billing_at']
+    if 'subscription_data' in sponsorship and sponsorship['subscription_data'] :
+        filters['data'][0]["subscription_data"] = sponsorship['subscription_data']
+    logger.info("filters:"+str(filters))
+    token = get_access_token()
+    logger.info("token :"+token)
+    headers = {'Authorization': 'Zoho-oauthtoken '+token}
+    zoho_response = requests.post(url,headers = headers, json=filters)
+    response = zoho_response.json()
+    logger.info("response :"+str(response))
+    if response['data'][0]['status'] == "success" :
+        logger.info("success response :"+str(response))
+        logger.info("response :"+str(response))
+        try:
+            zoho_id = response['data'][0]['details']['id']
+            logger.info(str(zoho_id))
+            sponsorShipData = Sponsorship.objects.filter(id = sponsorship['id']).first()
+            logger.info("application:"+str(sponsorShipData))
+            if sponsorShipData:
+                sponsorShipData.zoho_id = zoho_id
+                sponsorShipData.save()
+            else :
+                logger.error("no child found with "+str(sponsorShipData)+"to update zoho_id :"+str(zoho_id))
+        except Exception as e:
+            logger.info("Exception while updating zoho_id to SposorShip")
+            logger.exception(str(e))
+    else :
+        error_response = response
+        logger.info(str(error_response))
+        logger.error("error while syncing to zoho :"+str(error_response))
+
+
+
+def addSponsorShipPaymentToZoho(sponsorShipPayment):
+    url = 'https://zohoapis.in/crm/v2.1/Payments'
+    logger.info("sponsorShipPayment :"+str(sponsorShipPayment))
+    filters={
+        'data':[
+        {
+        
+        }
+        ]
+        }
+    if 'sponsorship' in sponsorShipPayment and sponsorShipPayment['sponsorship'] :
+        filters['data'][0]["sponsorship"] = sponsorShipPayment['sponsorship']
+    if 'reference_id' in sponsorShipPayment and sponsorShipPayment['reference_id'] :
+        filters['data'][0]["reference_id"] = sponsorShipPayment['reference_id']
+    if 'payment_date' in sponsorShipPayment and sponsorShipPayment['payment_date'] :
+        filters['data'][0]["payment_date"] = sponsorShipPayment['payment_date']
+    if 'currency' in sponsorShipPayment and sponsorShipPayment['currency'] :
+        filters['data'][0]["currency"] = sponsorShipPayment['currency']
+    if 'amount' in sponsorShipPayment and sponsorShipPayment['amount'] :
+        filters['data'][0]["amount"] = sponsorShipPayment['amount']
+    if 'next_billing_at' in sponsorShipPayment and sponsorShipPayment['next_billing_at'] :
+        filters['data'][0]["next_billing_at"] = sponsorShipPayment['next_billing_at']
+    if 'billing_period_unit' in sponsorShipPayment and sponsorShipPayment['billing_period_unit'] :
+        filters['data'][0]["billing_period_unit"] = sponsorShipPayment['billing_period_unit']
+    if 'subscription_data' in sponsorShipPayment and sponsorShipPayment['subscription_data'] :
+        filters['data'][0]["subscription_data"] = sponsorShipPayment['subscription_data']
+    logger.info("filters:"+str(filters))
+    token = get_access_token()
+    logger.info("token :"+token)
+    headers = {'Authorization': 'Zoho-oauthtoken '+token}
+    zoho_response = requests.post(url,headers = headers, json=filters)
+    response = zoho_response.json()
+    logger.info("response :"+str(response))
+    if response['data'][0]['status'] == "success" :
+        logger.info("success response :"+str(response))
+        logger.info("response :"+str(response))
+        try:
+            zoho_id = response['data'][0]['details']['id']
+            logger.info(str(zoho_id))
+            sponsorShipPaymentData = SponsorshipPayment.objects.filter(id = sponsorShipPayment['id']).first()
+            logger.info("application:"+str(sponsorShipPaymentData))
+            if sponsorShipPaymentData:
+                sponsorShipPaymentData.zoho_id = zoho_id
+                sponsorShipPaymentData.save()
+            else :
+                logger.error("no child found with "+str(sponsorShipPaymentData)+"to update zoho_id :"+str(zoho_id))
+        except Exception as e:
+            logger.info("Exception while updating zoho_id to SposorShip")
+            logger.exception(str(e))
+    else :
+        error_response = response
+        logger.info(str(error_response))
+        logger.error("error while syncing to zoho :"+str(error_response))
+
 
 
     
@@ -1692,7 +1813,7 @@ class ListDocumentTypes(APIView):
 
 
 class MyPaginator(PageNumberPagination):
-    page_size = 5
+    page_size = 50
     page_size_query_param = 'page_size'
     max_page_size = 1000
 
@@ -1733,17 +1854,17 @@ class getApplicationDetails(APIView,MyPaginator):
             filters["annual_income__lte"] = family_income
         queryset = Application.objects.filter(Q(is_active=True), **filters)
         page = self.paginate_queryset(queryset,request)
-        serializer = ApplicationDetailsSerializer(page,many=True)
+        serializer = ClientApplicationDetailsSerializer(page,many=True)
         for i in serializer.data:
             try :
                 profile =i.get('profile',None)
                 if profile :
-                    logger.info("profile :"+str(profile))
+                    # logger.info("profile :"+str(profile))
                     i['profile'] = profile.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
             except Exception as e:
                 logger.exception(traceback.format_exc())
                 logger.exception("Exception occured :"+str(e))
-                return Response({"status ": False,"error ": str})
+                return Response({"status ": False,"error ": str(e)})
         return Response({"status":True,"response":{"data":serializer.data}})
 
         
@@ -1763,6 +1884,7 @@ class SponsoredApplications(APIView,MyPaginator):
         gender = self.request.GET.get("gender",None)
         child_type = self.request.GET.get("child_type",None)
         guardian = self.request.GET.get("guardian_id",None)
+        sort_order = self.request.GET.get("sort_order", "asc")
         if email:
             filters["email"]=email
         if search:
@@ -1784,9 +1906,13 @@ class SponsoredApplications(APIView,MyPaginator):
             applicationIds = Sponsorship.objects.filter(sponsor_id = sponsor_id,is_active=True).values_list('application',flat=True)
             logger.info("Application Ids :"+str(applicationIds))
             queryset = Application.objects.filter(id__in=applicationIds,**filters,is_active=True)
-            logger.info("query set : "+str(queryset))
-            page = self.paginate_queryset(queryset,request)
-            serializer = ApplicationDetailsSerializer(page,many=True)
+            sort_by ="id"
+            if sort_order.lower() == "desc":
+                sort_by = "-" +sort_by  # Prefix "-" for descending order
+            sortedQueryset = queryset.order_by(sort_by)
+            logger.info("query set : "+str(sortedQueryset))
+            page = self.paginate_queryset(sortedQueryset,request)
+            serializer = ClientApplicationDetailsSerializer(page,many=True)
             logger.info(serializer.data)
             if (len(serializer.data) >0):
                 return Response({"status":True,"response":{"SponsoredApplications":{"sponsor_id":sponsor_id,"application":serializer.data}}})
