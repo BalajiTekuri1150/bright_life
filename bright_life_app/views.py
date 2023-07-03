@@ -94,6 +94,18 @@ from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 
 from django.contrib.auth import get_user_model
 
+from rest_framework.permissions import BasePermission
+
+class SponsorPermission(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.role == 'sponsor'
+    
+class GuardianPermission(BasePermission):
+    def has_permission(self, request, view):
+        # Check if the user has the "guardian" role
+        return request.user.role == 'guardian'
+
+
 class GoogleSignup(APIView):
     permission_classes= [AllowAny]
     authentication_classes =[]
@@ -1536,7 +1548,7 @@ class LogoutView(APIView):
         return Response({"status":True,"response":{"message":"Logout Successful"}})
 
 class UpdateSponsorProfile(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated ,SponsorPermission]
     authentication_classes = [TokenAuthentication]
     def post(self,request):
         data = request.data.copy()
@@ -1575,6 +1587,7 @@ class UpdateSponsorProfile(APIView):
                                 profile =serializer.data.get('profile',None)
                                 if profile :
                                     logger.info("profile :"+str(profile))
+                                    serializeddata['profile'] = profile.replace("https://yuppeducational-images.s3.ap-south-1.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
                                     serializeddata['profile'] = profile.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
                                     return Response({"status":True,"response":{"sponsor":serializeddata}})
                                 else :
@@ -1601,7 +1614,7 @@ class UpdateSponsorProfile(APIView):
 
 
 class UpdateSponsorDetails(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated ,SponsorPermission]
     authentication_classes = [TokenAuthentication]
     def post(self,request):
         try:
@@ -1643,7 +1656,7 @@ class UpdateSponsorDetails(APIView):
 
 
 class UpdateGuardianProfile(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes =[IsAuthenticated,GuardianPermission]
     authentication_classes = [TokenAuthentication]
     def post(self,request):
         data = request.data.copy()
@@ -1695,7 +1708,7 @@ class UpdateGuardianProfile(APIView):
 
         
 class getSponsorProfileView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated ,SponsorPermission]
     authentication_classes = [TokenAuthentication]
     def get(self,request):
         if Sponsor.objects.filter(user = request.GET.get("user_id"),is_active = True).exists():
@@ -1708,6 +1721,7 @@ class getSponsorProfileView(APIView):
                 profile =serializer.data.get('profile',None)
                 if profile :
                     logger.info("profile :"+str(profile))
+                    serializeddata['profile'] = profile.replace("https://yuppeducational-images.s3.ap-south-1.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
                     serializeddata['profile'] = profile.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
                     return Response({"status":True,"response":{"sponsor":serializeddata}})
                 else :
@@ -1720,7 +1734,7 @@ class getSponsorProfileView(APIView):
             return Response({"status":False,"error":{"message":"Sponsor Details not found"}})
 
 class getGuardianProfileView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes =[IsAuthenticated,GuardianPermission]
     authentication_classes = [TokenAuthentication]
     def get(self,request):
         if Guardian.objects.filter(user = request.GET.get("user_id"),is_active = True).exists():
@@ -1733,6 +1747,7 @@ class getGuardianProfileView(APIView):
                 profile =serializer.data.get('profile',None)
                 if profile :
                     logger.info("profile :"+str(profile))
+                    serializeddata['profile'] = profile.replace("https://yuppeducational-images.s3.ap-south-1.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
                     serializeddata['profile'] = profile.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
                     return Response({"status":True,"response":{"guardian":serializeddata}})
                 else :
@@ -1762,6 +1777,8 @@ class GetCountryState(APIView):
     def get(self,request):
         country_id = self.request.GET.get('country_id',None)
         data ={}
+        if country_id is None or country_id == 'undefined':
+            return Response({"status":False,"error":{"message":"Invalid parameter country_id as "+str(country_id)}})
         if country_id:
             states = CountryState.objects.filter(country_id=country_id,is_active = True)
             serializer = CountryStateSerializer(states,many=True)
@@ -1852,25 +1869,31 @@ class getApplicationDetails(APIView,MyPaginator):
             filters["guardian"] = guardian
         if family_income:
             filters["annual_income__lte"] = family_income
-        queryset = Application.objects.filter(Q(is_active=True), **filters)
-        page = self.paginate_queryset(queryset,request)
-        serializer = ClientApplicationDetailsSerializer(page,many=True)
-        for i in serializer.data:
-            try :
-                profile =i.get('profile',None)
-                if profile :
-                    # logger.info("profile :"+str(profile))
-                    i['profile'] = profile.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
-            except Exception as e:
-                logger.exception(traceback.format_exc())
-                logger.exception("Exception occured :"+str(e))
-                return Response({"status ": False,"error ": str(e)})
-        return Response({"status":True,"response":{"data":serializer.data}})
+        try:
+            queryset = Application.objects.filter(Q(is_active=True), **filters)
+            page = self.paginate_queryset(queryset,request)
+            serializer = ClientApplicationDetailsSerializer(page,many=True)
+            for i in serializer.data:
+                try :
+                    profile =i.get('profile',None)
+                    if profile :
+                        logger.info("profile :"+str(profile))
+                        i['profile'] = profile.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
+                        i['profile'] = profile.replace("https://yuppeducational-images.s3.ap-south-1.amazonaws.com", "https://d28rlmk1ou6g18.cloudfront.net")
+                except Exception as e:
+                    logger.exception(traceback.format_exc())
+                    logger.exception("Exception occured :"+str(e))
+                    return Response({"status ": False,"error ": str(e)})
+            return Response({"status":True,"response":{"data":serializer.data}})
+        except Exception as e:
+            logger.exception(traceback.format_exc())
+            logger.exception("Exception occured :"+str(e))
+            return Response({"status ": False,"error ": str(e)})
 
         
 
 class SponsoredApplications(APIView,MyPaginator):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated ,SponsorPermission]
     authentication_classes = [TokenAuthentication]
     def get(self,request):
         filters={}
@@ -1913,7 +1936,6 @@ class SponsoredApplications(APIView,MyPaginator):
             logger.info("query set : "+str(sortedQueryset))
             page = self.paginate_queryset(sortedQueryset,request)
             serializer = ClientApplicationDetailsSerializer(page,many=True)
-            logger.info(serializer.data)
             if (len(serializer.data) >0):
                 return Response({"status":True,"response":{"SponsoredApplications":{"sponsor_id":sponsor_id,"application":serializer.data}}})
             else :
@@ -1925,7 +1947,7 @@ class SponsoredApplications(APIView,MyPaginator):
 
 
 class getBankDetails(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes =[IsAuthenticated,GuardianPermission]
     authentication_classes = [TokenAuthentication]
 
     def get(self,request):
@@ -1944,7 +1966,7 @@ class getBankDetails(APIView):
             return Response({"status":False,"error":{"message":"missing parameter application_id"}})
 
 class UpdateBankDetails(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes =[IsAuthenticated,GuardianPermission]
     authentication_classes = [TokenAuthentication]
 
     def post(self,request):
@@ -1973,7 +1995,7 @@ class UpdateBankDetails(APIView):
 
             
 class AddBankDetails(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes =[IsAuthenticated,GuardianPermission]
     authentication_classes = [TokenAuthentication]
 
     def post(self,request):
@@ -2006,7 +2028,7 @@ class AddBankDetails(APIView):
 
 
 class getApplicationDocuments(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes =[IsAuthenticated,GuardianPermission]
     authentication_classes = [TokenAuthentication]
     parser_class = (FileUploadParser,)
 
@@ -2028,6 +2050,7 @@ class getApplicationDocuments(APIView):
                     data['document_type'] = document_type
                     data['file_type'] = i.file_type
                     data['seq_no'] = i.seq_no
+                    data['url']=i.url.url.replace("https://yuppeducational-images.s3.ap-south-1.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
                     data['url']=i.url.url.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
                     result.append(data)
                 logger.info(result)
@@ -2121,7 +2144,7 @@ def upload_to_s3(file_path,file_name,application_id):
 
 
 class UpdateApplicationDocument(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes =[IsAuthenticated,GuardianPermission]
     authentication_classes = [TokenAuthentication]
     parser_class = (FileUploadParser,)
     
@@ -2151,6 +2174,7 @@ class UpdateApplicationDocument(APIView):
                         data['document_type'] = document_type
                         data['file_type'] = updatedDocuments.file_type
                         data['seq_no'] = updatedDocuments.seq_no
+                        data['url']= updatedDocuments.url.url.replace("https://yuppeducational-images.s3.ap-south-1.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
                         data['url']= updatedDocuments.url.url.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
                         result.append(data)
                         logger.info(result)
@@ -2175,7 +2199,7 @@ class UpdateApplicationDocument(APIView):
 
 
 class AddApplicationDocument(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes =[IsAuthenticated,GuardianPermission]
     authentication_classes = [TokenAuthentication]
     parser_class = (FileUploadParser,)
 
@@ -2204,6 +2228,7 @@ class AddApplicationDocument(APIView):
                 data['document_type'] = document_type
                 data['file_type'] = res.file_type
                 data['seq_no'] = res.seq_no
+                data['url']= res.url.url.replace("https://yuppeducational-images.s3.ap-south-1.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
                 data['url']= res.url.url.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
                 result.append(data)
                 # print(result)
@@ -2250,7 +2275,7 @@ class AddApplicationDocumentVersion2(APIView):
 
 
 class BulkInsertApplicationDocument(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes =[IsAuthenticated,GuardianPermission]
     authentication_classes = [TokenAuthentication]
     parser_class = (FileUploadParser,)
 
@@ -2281,7 +2306,7 @@ class BulkInsertApplicationDocument(APIView):
                 
 
 class RemoveApplicationDocuments(APIView):
-    permission_classes =[IsAuthenticated]
+    permission_classes =[IsAuthenticated,GuardianPermission]
     authentication_classes = [TokenAuthentication]
 
     def post(self,request):
@@ -2302,7 +2327,7 @@ class RemoveApplicationDocuments(APIView):
 
 
 class UpdateApplicationProfile(APIView):
-    permission_classes =[IsAuthenticated]
+    permission_classes =[IsAuthenticated,GuardianPermission]
     authentication_classes = [TokenAuthentication]
 
     def post(self,request):
@@ -2353,7 +2378,7 @@ class UpdateApplicationProfile(APIView):
             
 
 class AddApplicationProfile(APIView):
-    permission_classes =[IsAuthenticated]
+    permission_classes =[IsAuthenticated,GuardianPermission]
     authentication_classes = [TokenAuthentication]
 
     def post(self,request):
@@ -2393,6 +2418,7 @@ class AddApplicationProfile(APIView):
                     profile =serializer.data.get('profile',None)
                     if profile :
                         logger.info("profile :"+str(profile))
+                        serializeddata['profile'] = profile.replace("https://yuppeducational-images.s3.ap-south-1.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
                         serializeddata['profile'] = profile.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
                         return Response({"status":True,"response":{"data":serializeddata}})
                     else :
@@ -2409,29 +2435,29 @@ class AddApplicationProfile(APIView):
                 return Response({"status":False,"error":{"message":str(e)}})
 
 
-class AddApplication(APIView):
-    permission_classes =[IsAuthenticated]
-    authentication_classes = [TokenAuthentication]
-    # serializer_class = ApplicationProfileSerializer
-    # parser_classes = [MultiPartParser, FormParser]
-    def post(self,request):
-        data = self.request.data
-        data['created_by'] = request.user.name
-        data['last_updated_by'] = request.user.name
-        data["child_type"] = EnumChildType.objects.filter(type=data.pop("child_type")).first().id
-        data["gender"] = EnumGender.objects.filter(gender=data.pop("gender")).first().id
-        serializer = ApplicationModelSerializer(data=data)
-        if serializer.is_valid():
-            serializer.create(data)
-            logger.info(serializer.data)
-            return Response({"status":True,"response":{"data":serializer.data}})
-        else :
-            logger.error(serializer.errors)
-            return Response({"status":False,"error":{"message":serializer.errors}})
+# class AddApplication(APIView):
+#     permission_classes =[IsAuthenticated]
+#     authentication_classes = [TokenAuthentication]
+#     # serializer_class = ApplicationProfileSerializer
+#     # parser_classes = [MultiPartParser, FormParser]
+#     def post(self,request):
+#         data = self.request.data
+#         data['created_by'] = request.user.name
+#         data['last_updated_by'] = request.user.name
+#         data["child_type"] = EnumChildType.objects.filter(type=data.pop("child_type")).first().id
+#         data["gender"] = EnumGender.objects.filter(gender=data.pop("gender")).first().id
+#         serializer = ApplicationModelSerializer(data=data)
+#         if serializer.is_valid():
+#             serializer.create(data)
+#             logger.info(serializer.data)
+#             return Response({"status":True,"response":{"data":serializer.data}})
+#         else :
+#             logger.error(serializer.errors)
+#             return Response({"status":False,"error":{"message":serializer.errors}})
 
 
 class UpdateEducationalDetails(APIView):
-    permission_classes =[IsAuthenticated]
+    permission_classes =[IsAuthenticated,GuardianPermission]
     authentication_classes = [TokenAuthentication]
     def post(self,request):
         data = request.data
@@ -2463,7 +2489,7 @@ class UpdateEducationalDetails(APIView):
 
 
 class SponsorKid(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated ,SponsorPermission]
     authentication_classes = [TokenAuthentication]
 
     def post(self,request):
@@ -2500,7 +2526,7 @@ class SponsorKid(APIView):
             return Response({"status":False,"error":{"message":serializer.errors}})
 
 class UpdateSponsorship(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated ,SponsorPermission]
     authentication_classes = [TokenAuthentication]
 
     def post(self,request):
@@ -2536,7 +2562,7 @@ class UpdateSponsorship(APIView):
 
 
 class UpdateGuardianDetails(APIView):
-    permission_classes =[IsAuthenticated]
+    permission_classes =[IsAuthenticated,GuardianPermission]
     authentication_classes = [TokenAuthentication]
     def post(self,request):
         data = self.request.data

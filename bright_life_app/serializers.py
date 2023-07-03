@@ -326,6 +326,11 @@ class ClientUserSerializer(serializers.ModelSerializer):
     model = User
     fields = ['id','name','email','role']
 
+class ClientUserSerializerWithoutEmail(serializers.ModelSerializer):
+  class Meta:
+    model = User
+    fields = ['id','name','role']
+
 
 
 class ClientSponsorProfle(serializers.ModelSerializer):
@@ -344,6 +349,16 @@ class ClientGuardianProfle(serializers.ModelSerializer):
   class Meta:
     model = Guardian
     fields = ['id','user','mobile','organization','profile','source','address','city','state','country','postal_code']
+
+  def to_representation(self, instance):
+    data = super().to_representation(instance)
+    return {k: v for k, v in data.items() if v is not None and v != ""}   
+
+class ClientGuardianProfleWithoutMobile(serializers.ModelSerializer):
+  user = ClientUserSerializerWithoutEmail(read_only=True)
+  class Meta:
+    model = Guardian
+    fields = ['id','user','organization','profile','source','address','city','state','country','postal_code']
 
   def to_representation(self, instance):
     data = super().to_representation(instance)
@@ -569,7 +584,7 @@ class ClientApplicationDetailsSerializer(serializers.ModelSerializer):
   gender = GenderSerializer(read_only = True)
   child_type = ChildTypeSerializer(read_only = True)
   status = ChildStatusSerializer(read_only = True)
-  guardian = ClientGuardianProfle(read_only=True)
+  guardian = ClientGuardianProfleWithoutMobile(read_only=True)
   class Meta:
     model = Application
     fields = ["id","name","birthday","age","profile","country","state","grade","school","school_address","hobbies","aspirations","achievements","about","profession","annual_income","family_members","extra_allowance","gender","child_type","status","guardian","zoho_id"]
