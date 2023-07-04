@@ -543,7 +543,7 @@ class SponsorshipSerializer(serializers.ModelSerializer):
 class ClientSponsorshipSerializer(serializers.ModelSerializer):
   class Meta:
     model = Sponsorship
-    fields = ['id','sponsor_id','application_id','start_date','status','pledge_date','reference_id','next_billing_at','subscription_data']
+    fields = ['id','sponsor_id','application_id','start_date','status','type','amount','billing_period','status','currency_code','pledge_date','reference_id','next_billing_at','subscription_data','zoho_id']
 
   def to_representation(self, instance):
     data = super().to_representation(instance)

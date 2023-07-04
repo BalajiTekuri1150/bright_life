@@ -344,6 +344,7 @@ class Sponsorship(models.Model):
     reference_id = models.CharField(max_length=256, null=True,blank=True)
     next_billing_at = models.DateTimeField(null=True,blank=True)
     subscription_data = models.JSONField(blank = True,null=True)
+    zoho_id = models.CharField(max_length=25, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     created_by = models.CharField(max_length=256,verbose_name="Created By")
     created_date = models.DateTimeField(auto_now_add=True,verbose_name="Created Date")

@@ -433,6 +433,9 @@ class CreateCheckoutSession(APIView):
                     sponsorship.subscription_data = subscription_data,
                     sponsorship.reference_id = session_reference_id
                     sponsorship.save()
+                    res = ClientSponsorshipSerializer(sponsorship)
+                    logger.info("ClientSponsorshipSerializer :"+str(res.data))
+                    updateSponsorShipToZoho(res.data)
                     # applicationId = Sponsorship.objects.filter(id = sponsorship_id).first().application_id
                     # logger.info(applicationId)
                     # status =EnumApplicationStatus.objects.get(status = 'scholorship-received').id
@@ -737,7 +740,7 @@ def updateChildtoZoho(child):
 
 
 def addSponsorShipToZoho(sponsorship):
-    url = 'https://zohoapis.in/crm/v2.1/SponsorShips'
+    url = 'https://zohoapis.in/crm/v2.1/Sponsorships'
     logger.info("sponsorship :"+str(sponsorship))
     filters={
         'data':[
@@ -764,6 +767,7 @@ def addSponsorShipToZoho(sponsorship):
         filters['data'][0]["Billing_Period"] = sponsorship['billing_period']
     if 'type' in sponsorship and sponsorship['type'] :
         filters['data'][0]["Type"] = sponsorship['type']
+        filters['data'][0]["Name"] =  sponsorship['type']
     if 'reference_id' in sponsorship and sponsorship['reference_id'] :
         filters['data'][0]["Reference_Id"] = sponsorship['reference_id']
     if 'next_billing_at' in sponsorship and sponsorship['next_billing_at'] :
@@ -784,12 +788,12 @@ def addSponsorShipToZoho(sponsorship):
             zoho_id = response['data'][0]['details']['id']
             logger.info(str(zoho_id))
             sponsorShipData = Sponsorship.objects.filter(id = sponsorship['id']).first()
-            logger.info("application:"+str(sponsorShipData))
+            logger.info("sponsorShipData:"+str(sponsorShipData))
             if sponsorShipData:
                 sponsorShipData.zoho_id = zoho_id
                 sponsorShipData.save()
             else :
-                logger.error("no child found with "+str(sponsorShipData)+"to update zoho_id :"+str(zoho_id))
+                logger.error("no sponsorship found with "+str(sponsorShipData)+"to update zoho_id :"+str(zoho_id))
         except Exception as e:
             logger.info("Exception while updating zoho_id to SposorShip")
             logger.exception(str(e))
@@ -797,6 +801,61 @@ def addSponsorShipToZoho(sponsorship):
         error_response = response
         logger.info(str(error_response))
         logger.error("error while syncing to zoho :"+str(error_response))
+
+
+def updateSponsorShipToZoho(sponsorship):
+    url = 'https://zohoapis.in/crm/v2.1/Sponsorships'
+    logger.info("sponsorship :"+str(sponsorship))
+    if 'zoho_id' in sponsorship and sponsorship['zoho_id']:
+        url = url+"/"+sponsorship['zoho_id']
+        filters={
+        'data':[
+        {
+        
+        }
+        ]
+        }
+        if 'sponsor_id' in sponsorship and sponsorship['sponsor_id'] :
+            filters['data'][0]["Sponsor_Id"] = sponsorship['sponsor_id']
+        if 'application_id' in sponsorship and sponsorship['application_id'] :
+            filters['data'][0]["Child_Id"] = sponsorship['application_id']
+        if 'status' in sponsorship and sponsorship['status'] :
+            filters['data'][0]["Status"] = sponsorship['status']
+        if 'start_date' in sponsorship and sponsorship['start_date'] :
+            filters['data'][0]["Start_Date"] = sponsorship['start_date']
+        if 'pledge_date' in sponsorship and sponsorship['pledge_date'] :
+            filters['data'][0]["Pledge_Date"] = sponsorship['pledge_date']
+        if 'amount' in sponsorship and sponsorship['amount'] :
+            filters['data'][0]["Amount"] = sponsorship['amount']
+        if 'currency_code' in sponsorship and sponsorship['currency_code'] :
+            filters['data'][0]["Currency_Code"] = sponsorship['currency_code']
+        if 'billing_period' in sponsorship and sponsorship['billing_period'] :
+            filters['data'][0]["Billing_Period"] = sponsorship['billing_period']
+        if 'type' in sponsorship and sponsorship['type'] :
+            filters['data'][0]["Type"] = sponsorship['type']
+            filters['data'][0]["Name"] =  sponsorship['type']
+        if 'reference_id' in sponsorship and sponsorship['reference_id'] :
+            filters['data'][0]["Reference_Id"] = sponsorship['reference_id']
+        if 'next_billing_at' in sponsorship and sponsorship['next_billing_at'] :
+            filters['data'][0]["Next_Billing_At"] = sponsorship['next_billing_at']
+        if 'subscription_data' in sponsorship and sponsorship['subscription_data'] :
+            filters['data'][0]["Subscription_Data"] = sponsorship['subscription_data']
+        logger.info("filters:"+str(filters))
+        token = get_access_token()
+        logger.info("token :"+token)
+        headers = {'Authorization': 'Zoho-oauthtoken '+token}
+        zoho_response = requests.put(url,headers = headers, json=filters)
+        response = zoho_response.json()
+        logger.info("response :"+str(response))
+        if response['data'][0]['status'] == "success" :
+            logger.info("success response :"+str(response))
+            logger.info("response :"+str(response))
+        else :
+            error_response = response
+            logger.info(error_response)
+            logger.error("error while syncing to zoho :"+str(error_response))
+    else :
+        logger.error("zoho_id not found for child"+str(sponsorship['id']))
 
 
 
