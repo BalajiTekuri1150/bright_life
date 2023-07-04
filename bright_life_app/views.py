@@ -1873,8 +1873,10 @@ class getApplicationDetails(APIView,MyPaginator):
             filters["annual_income__lte"] = family_income
         try:
             queryset = Application.objects.filter(Q(is_active=True), **filters)
-            page = self.paginate_queryset(queryset,request)
-            serializer = ClientApplicationDetailsSerializer(page,many=True)
+            paginator = MyPaginator()
+            paginated_queryset = paginator.paginate_queryset(queryset, request)
+            serializer = ClientApplicationDetailsSerializer(paginated_queryset,many=True)
+            total_pages = paginator.page.paginator.num_pages            
             for i in serializer.data:
                 try :
                     profile =i.get('profile',None)
@@ -1886,7 +1888,7 @@ class getApplicationDetails(APIView,MyPaginator):
                     logger.exception(traceback.format_exc())
                     logger.exception("Exception occured :"+str(e))
                     return Response({"status ": False,"error ": str(e)})
-            return Response({"status":True,"response":{"data":serializer.data}})
+            return Response({"status":True,"response":{"data":serializer.data,"total_pages": total_pages}})
         except Exception as e:
             logger.exception(traceback.format_exc())
             logger.exception("Exception occured :"+str(e))
@@ -1936,10 +1938,12 @@ class SponsoredApplications(APIView,MyPaginator):
                 sort_by = "-" +sort_by  # Prefix "-" for descending order
             sortedQueryset = queryset.order_by(sort_by)
             logger.info("query set : "+str(sortedQueryset))
-            page = self.paginate_queryset(sortedQueryset,request)
-            serializer = ClientApplicationDetailsSerializer(page,many=True)
+            paginator = MyPaginator()
+            paginated_queryset = paginator.paginate_queryset(sortedQueryset,request)
+            serializer = ClientApplicationDetailsSerializer(paginated_queryset,many=True)
+            total_pages = paginator.page.paginator.num_pages
             if (len(serializer.data) >0):
-                return Response({"status":True,"response":{"SponsoredApplications":{"sponsor_id":sponsor_id,"application":serializer.data}}})
+                return Response({"status":True,"response":{"SponsoredApplications":{"sponsor_id":sponsor_id,"application":serializer.data,"total_pages":total_pages}}})
             else :
                 return Response({"status" :False,"error":{"message" : "You haven't sponsored any child yet"}})
         except Exception as e:
