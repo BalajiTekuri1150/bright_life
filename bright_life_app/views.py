@@ -385,7 +385,7 @@ class CreateCheckoutSession(APIView):
             try:
                 if not is_recurring:
                     session = stripe.checkout.Session.create(
-                        success_url='https://brightlife-client-duplicate-changes.vercel.app/',
+                        success_url='https://test.brightlife.org/',
                         cancel_url=current_url,
                         payment_method_types=['card'],
                         line_items=[{
@@ -401,11 +401,12 @@ class CreateCheckoutSession(APIView):
                         }],
                         mode='payment',
                         customer_email=sponsor_email,
+                        client_reference_id=str(sponsorship_id),
                         # description=str(sponsorship_id),
                     )
                 else:
                     session = stripe.checkout.Session.create(
-                        success_url='https://brightlife-client-duplicate-changes.vercel.app/',
+                        success_url='https://test.brightlife.org/',
                         cancel_url=current_url,
                         payment_method_types=['card'],
                         mode='subscription',
@@ -468,6 +469,7 @@ class UpdateStripeSubscriptionDetails(APIView):
             event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
             event_data = event['data']
             event_type = event['type']
+            logger.info("event_data :"+str(event_data))
 
             if event_type == 'payment_intent.succeeded':
                 logger.info("payment_intent.succeeded")
@@ -745,29 +747,29 @@ def addSponsorShipToZoho(sponsorship):
         ]
         }
     if 'sponsor_id' in sponsorship and sponsorship['sponsor_id'] :
-        filters['data'][0]["sponsor_id"] = sponsorship['sponsor_id']
+        filters['data'][0]["Sponsor_Id"] = sponsorship['sponsor_id']
     if 'application_id' in sponsorship and sponsorship['application_id'] :
-        filters['data'][0]["application_id"] = sponsorship['application_id']
+        filters['data'][0]["Child_Id"] = sponsorship['application_id']
     if 'status' in sponsorship and sponsorship['status'] :
-        filters['data'][0]["status"] = sponsorship['status']
+        filters['data'][0]["Status"] = sponsorship['status']
     if 'start_date' in sponsorship and sponsorship['start_date'] :
-        filters['data'][0]["start_date"] = sponsorship['start_date']
+        filters['data'][0]["Start_Date"] = sponsorship['start_date']
     if 'pledge_date' in sponsorship and sponsorship['pledge_date'] :
-        filters['data'][0]["pledge_date"] = sponsorship['pledge_date']
+        filters['data'][0]["Pledge_Date"] = sponsorship['pledge_date']
     if 'amount' in sponsorship and sponsorship['amount'] :
-        filters['data'][0]["amount"] = sponsorship['amount']
+        filters['data'][0]["Amount"] = sponsorship['amount']
     if 'currency_code' in sponsorship and sponsorship['currency_code'] :
-        filters['data'][0]["currency_code"] = sponsorship['currency_code']
+        filters['data'][0]["Currency_Code"] = sponsorship['currency_code']
     if 'billing_period' in sponsorship and sponsorship['billing_period'] :
-        filters['data'][0]["billing_period"] = sponsorship['billing_period']
+        filters['data'][0]["Billing_Period"] = sponsorship['billing_period']
     if 'type' in sponsorship and sponsorship['type'] :
-        filters['data'][0]["type"] = sponsorship['type']
+        filters['data'][0]["Type"] = sponsorship['type']
     if 'reference_id' in sponsorship and sponsorship['reference_id'] :
-        filters['data'][0]["reference_id"] = sponsorship['reference_id']
+        filters['data'][0]["Reference_Id"] = sponsorship['reference_id']
     if 'next_billing_at' in sponsorship and sponsorship['next_billing_at'] :
-        filters['data'][0]["next_billing_at"] = sponsorship['next_billing_at']
+        filters['data'][0]["Next_Billing_At"] = sponsorship['next_billing_at']
     if 'subscription_data' in sponsorship and sponsorship['subscription_data'] :
-        filters['data'][0]["subscription_data"] = sponsorship['subscription_data']
+        filters['data'][0]["Subscription_Data"] = sponsorship['subscription_data']
     logger.info("filters:"+str(filters))
     token = get_access_token()
     logger.info("token :"+token)
@@ -809,21 +811,21 @@ def addSponsorShipPaymentToZoho(sponsorShipPayment):
         ]
         }
     if 'sponsorship' in sponsorShipPayment and sponsorShipPayment['sponsorship'] :
-        filters['data'][0]["sponsorship"] = sponsorShipPayment['sponsorship']
+        filters['data'][0]["Sponsorship_Id"] = sponsorShipPayment['sponsorship']
     if 'reference_id' in sponsorShipPayment and sponsorShipPayment['reference_id'] :
-        filters['data'][0]["reference_id"] = sponsorShipPayment['reference_id']
+        filters['data'][0]["Reference_Id"] = sponsorShipPayment['reference_id']
     if 'payment_date' in sponsorShipPayment and sponsorShipPayment['payment_date'] :
-        filters['data'][0]["payment_date"] = sponsorShipPayment['payment_date']
+        filters['data'][0]["Payment_Date"] = sponsorShipPayment['payment_date']
     if 'currency' in sponsorShipPayment and sponsorShipPayment['currency'] :
-        filters['data'][0]["currency"] = sponsorShipPayment['currency']
+        filters['data'][0]["Cash"] = sponsorShipPayment['currency']
     if 'amount' in sponsorShipPayment and sponsorShipPayment['amount'] :
-        filters['data'][0]["amount"] = sponsorShipPayment['amount']
+        filters['data'][0]["Amount"] = sponsorShipPayment['amount']
     if 'next_billing_at' in sponsorShipPayment and sponsorShipPayment['next_billing_at'] :
-        filters['data'][0]["next_billing_at"] = sponsorShipPayment['next_billing_at']
+        filters['data'][0]["Next_Billing_At"] = sponsorShipPayment['next_billing_at']
     if 'billing_period_unit' in sponsorShipPayment and sponsorShipPayment['billing_period_unit'] :
-        filters['data'][0]["billing_period_unit"] = sponsorShipPayment['billing_period_unit']
+        filters['data'][0]["Billing_Period_Unit"] = sponsorShipPayment['billing_period_unit']
     if 'subscription_data' in sponsorShipPayment and sponsorShipPayment['subscription_data'] :
-        filters['data'][0]["subscription_data"] = sponsorShipPayment['subscription_data']
+        filters['data'][0]["Subscription_Data"] = sponsorShipPayment['subscription_data']
     logger.info("filters:"+str(filters))
     token = get_access_token()
     logger.info("token :"+token)
@@ -845,7 +847,7 @@ def addSponsorShipPaymentToZoho(sponsorShipPayment):
             else :
                 logger.error("no child found with "+str(sponsorShipPaymentData)+"to update zoho_id :"+str(zoho_id))
         except Exception as e:
-            logger.info("Exception while updating zoho_id to SposorShip")
+            logger.info("Exception while updating zoho_id to SponsorshipPayment")
             logger.exception(str(e))
     else :
         error_response = response
@@ -2517,7 +2519,11 @@ class SponsorKid(APIView):
                 SponsorshipObj = Sponsorship.objects.latest('id')
                 res = ClientSponsorshipSerializer(SponsorshipObj)
                 logger.info(res.data)
+                addSponsorShipToZoho(res.data)
                 return Response({"status":True,"response":{"data":res.data}})
+            except IntegrityError as e:
+                        logger.exception(str(e))
+                        raise ValidationError({"400": f'{str(e)}'})
             except Exception as e:
                 logger.exception(str(e))
                 return Response({"status":False,"error":{"message":str(e)}})
