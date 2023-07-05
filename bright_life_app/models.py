@@ -258,7 +258,7 @@ class Application(models.Model):
     child_type =  models.ForeignKey(EnumChildType,on_delete=models.CASCADE)
     country = models.ForeignKey(Country,on_delete=models.CASCADE,null=True)
     state = models.ForeignKey(CountryState,on_delete=models.CASCADE,null=True)
-    region = models.CharField(max_length=256,null=True)
+    region = models.CharField(max_length=256,null=True,blank=True)
     grade = models.CharField(max_length = 20,null = True,blank = True)
     school = models.CharField(max_length = 250, null = True,blank=True)
     school_address = models.CharField(max_length = 256, null = True,blank=True)

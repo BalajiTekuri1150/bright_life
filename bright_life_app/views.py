@@ -1896,7 +1896,7 @@ class MyPaginator(PageNumberPagination):
     max_page_size = 1000
 
 class getApplicationDetails(APIView,MyPaginator):
-    permission_classes =[IsAuthenticated]
+    permission_classes =[IsAuthenticated ,SponsorPermission]
     authentication_classes = [TokenAuthentication]
     def get(self,request):
         filters={}
@@ -1935,6 +1935,65 @@ class getApplicationDetails(APIView,MyPaginator):
             paginator = MyPaginator()
             paginated_queryset = paginator.paginate_queryset(queryset, request)
             serializer = ClientApplicationDetailsSerializer(paginated_queryset,many=True)
+            total_pages = paginator.page.paginator.num_pages            
+            for i in serializer.data:
+                try :
+                    profile =i.get('profile',None)
+                    if profile :
+                        logger.info("profile :"+str(profile))
+                        i['profile'] = profile.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
+                        i['profile'] = profile.replace("https://yuppeducational-images.s3.ap-south-1.amazonaws.com", "https://d28rlmk1ou6g18.cloudfront.net")
+                except Exception as e:
+                    logger.exception(traceback.format_exc())
+                    logger.exception("Exception occured :"+str(e))
+                    return Response({"status ": False,"error ": str(e)})
+            return Response({"status":True,"response":{"data":serializer.data,"total_pages": total_pages}})
+        except Exception as e:
+            logger.exception(traceback.format_exc())
+            logger.exception("Exception occured :"+str(e))
+            return Response({"status ": False,"error ": str(e)})
+        
+class getGuardianApplicationDetails(APIView,MyPaginator):
+    permission_classes =[IsAuthenticated, GuardianPermission]
+    authentication_classes = [TokenAuthentication]
+    def get(self,request):
+        filters={}
+        application_id = self.request.GET.get("application_id",None)
+        email = self.request.GET.get("email",None)
+        search = self.request.GET.get("search",None)
+        state = self.request.GET.get("state",None)
+        country = self.request.GET.get("country",None)
+        region = self.request.GET.get("region",None)
+        gender = self.request.GET.get("gender",None)
+        child_type = self.request.GET.get("child_type",None)
+        guardian = self.request.GET.get("guardian_id",None)
+        family_income = self.request.GET.get("annual_income",None)
+
+        if application_id:
+            filters["id"]=application_id
+        if email:
+            filters["email"]=email
+        if search:
+            filters["name__icontains"]=search
+        if state:
+            filters["state"] = state
+        if country:
+            filters["country"] = country
+        if region:
+            filters["region"] = region
+        if gender:
+            filters["gender"] = gender
+        if child_type:
+            filters["child_type"] = child_type
+        if guardian :
+            filters["guardian"] = guardian
+        if family_income:
+            filters["annual_income__lte"] = family_income
+        try:
+            queryset = Application.objects.filter(Q(is_active=True), **filters)
+            paginator = MyPaginator()
+            paginated_queryset = paginator.paginate_queryset(queryset, request)
+            serializer = ApplicationDetailsSerializer(paginated_queryset,many=True)
             total_pages = paginator.page.paginator.num_pages            
             for i in serializer.data:
                 try :
@@ -2422,6 +2481,8 @@ class UpdateApplicationProfile(APIView):
                     application_data.child_type_id = data.get('child_type_id',application_data.child_type)
                     application_data.gender_id = data.get('gender_id',application_data.gender)
                     application_data.last_updated_by = data.get('last_updated_by',application_data.last_updated_by)
+                    application_data.country_id = data.get('gender_id',application_data.country)
+                    application_data.state_id = data.get('last_updated_by',application_data.state)
 
                     try:
                         application_data.save()

@@ -2,7 +2,7 @@ from django.urls import URLPattern, path
 
 from . import views
 
-from .views import CheckEmail, ListDocumentTypes, UpdateGuardianProfile, UpdateSponsorDetails, getApplicationDetails, RegisterUserAPIView,CountryList,GetCountryState,ListGender,ListChildStatus,ListChildType,ListRoles,AddBankDetails,getBankDetails,UpdateBankDetails,LogoutView,AddApplicationProfile,UpdateApplicationProfile,UpdateGuardianDetails,UpdateEducationalDetails,UpdateSponsorProfile, getGuardianProfileView,getSponsorProfileView,getApplicationDocuments,UpdateApplicationDocument,SponsoredApplications,Login,AddApplicationDocument,SponsorKid,UpdateSponsorship,UpdatePassword,GetOTP,verifyOTP,ResendOTP,ChangePassword,OTPMandatorySignup,GetOTPV2,ResendOTPV2,CreateUserView,RemoveApplicationDocuments,BulkInsertApplicationDocument,createCustomer,updateSubscriptionDetails,ListDonationPlans,CreateCheckoutSession,UpdateStripeSubscriptionDetails,GoogleSignup, GoogleSignIn
+from .views import CheckEmail, ListDocumentTypes, UpdateGuardianProfile, UpdateSponsorDetails, getApplicationDetails, RegisterUserAPIView,CountryList,GetCountryState,ListGender,ListChildStatus,ListChildType,ListRoles,AddBankDetails,getBankDetails,UpdateBankDetails,LogoutView,AddApplicationProfile,UpdateApplicationProfile,UpdateGuardianDetails,UpdateEducationalDetails,UpdateSponsorProfile, getGuardianProfileView,getSponsorProfileView,getApplicationDocuments,UpdateApplicationDocument,SponsoredApplications,Login,AddApplicationDocument,SponsorKid,UpdateSponsorship,UpdatePassword,GetOTP,verifyOTP,ResendOTP,ChangePassword,OTPMandatorySignup,GetOTPV2,ResendOTPV2,CreateUserView,RemoveApplicationDocuments,BulkInsertApplicationDocument,createCustomer,updateSubscriptionDetails,ListDonationPlans,CreateCheckoutSession,UpdateStripeSubscriptionDetails,GoogleSignup, GoogleSignIn,getGuardianApplicationDetails
 
 from django.conf.urls.static import static
 from django.conf import  settings
@@ -70,7 +70,8 @@ urlpatterns =[
     path('brightlife/update/guardian/details',UpdateGuardianDetails.as_view(),name="update_guardian_details"),
     path('brightlife/update/education/details',UpdateEducationalDetails.as_view(),name="update_education_details"),
     path('brightlife/get/application/details',getApplicationDetails.as_view(),name="application_details"),
-
+    path('brightlife/get/guardian/application/details',getGuardianApplicationDetails.as_view(),name="guardian_application_details"),
+    
     # path('update/education/details',UpdateEducationalDetails.as_view(),name="update_education"),
 
 
