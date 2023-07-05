@@ -2481,8 +2481,8 @@ class UpdateApplicationProfile(APIView):
                     application_data.child_type_id = data.get('child_type_id',application_data.child_type)
                     application_data.gender_id = data.get('gender_id',application_data.gender)
                     application_data.last_updated_by = data.get('last_updated_by',application_data.last_updated_by)
-                    application_data.country_id = data.get('gender_id',application_data.country)
-                    application_data.state_id = data.get('last_updated_by',application_data.state)
+                    application_data.country_id = data.get('country_id',application_data.country)
+                    application_data.state_id = data.get('state_id',application_data.state)
 
                     try:
                         application_data.save()
