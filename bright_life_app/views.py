@@ -1975,69 +1975,53 @@ class getGuardianApplicationDetails(APIView,MyPaginator):
         guardian = self.request.GET.get("guardian_id",None)
         family_income = self.request.GET.get("annual_income",None)
         sort_order = self.request.GET.get("sort_order", "asc")
-
-        # Get the session ID from the request headers
-        session_id = request.META.get('HTTP_SESSION_ID')
-
-        # Verify that the session ID belongs to the guardian
+        if application_id:
+            filters["id"]=application_id
+        if email:
+            filters["email"]=email
+        if search:
+            filters["name__icontains"]=search
+        if state:
+            filters["state"] = state
+        if country:
+            filters["country"] = country
+        if region:
+            filters["region"] = region
+        if gender:
+            filters["gender"] = gender
+        if child_type:
+            filters["child_type"] = child_type
+        if guardian :
+            filters["guardian"] = guardian
+        if family_income:
+            filters["annual_income__lte"] = family_income
         try:
-            session = Session.objects.get(session_key=session_id)
-            user_id = session.get_decoded().get('_auth_user_id')
-            guardian_id = Guardian.objects.get(user_id=user_id).id
-            if str(guardian.id) != guardian_id:
-                return Response({"error": "Invalid session for the provided guardian ID"}, status=status.HTTP_403_FORBIDDEN)
-            else:
-                if application_id:
-                    filters["id"]=application_id
-                if email:
-                    filters["email"]=email
-                if search:
-                    filters["name__icontains"]=search
-                if state:
-                    filters["state"] = state
-                if country:
-                    filters["country"] = country
-                if region:
-                    filters["region"] = region
-                if gender:
-                    filters["gender"] = gender
-                if child_type:
-                    filters["child_type"] = child_type
-                if guardian :
-                    filters["guardian"] = guardian
-                if family_income:
-                    filters["annual_income__lte"] = family_income
-                try:
-                    queryset = Application.objects.filter(Q(is_active=True), **filters)
-                    sort_by ="id"
-                    if sort_order.lower() == "desc":
-                        sort_by = "-" +sort_by  # Prefix "-" for descending order
-                    sortedQueryset = queryset.order_by(sort_by)
-                    logger.info("query set : "+str(sortedQueryset))
-                    paginator = MyPaginator()
-                    paginated_queryset = paginator.paginate_queryset(queryset, request)
-                    serializer = ApplicationDetailsSerializer(paginated_queryset,many=True)
-                    total_pages = paginator.page.paginator.num_pages            
-                    for i in serializer.data:
-                        try :
-                            profile =i.get('profile',None)
-                            if profile :
-                                logger.info("profile :"+str(profile))
-                                i['profile'] = profile.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
-                                i['profile'] = profile.replace("https://yuppeducational-images.s3.ap-south-1.amazonaws.com", "https://d28rlmk1ou6g18.cloudfront.net")
-                        except Exception as e:
-                            logger.exception(traceback.format_exc())
-                            logger.exception("Exception occured :"+str(e))
-                            return Response({"status ": False,"error ": str(e)})
-                    return Response({"status":True,"response":{"data":serializer.data,"total_pages": total_pages}})
+            queryset = Application.objects.filter(Q(is_active=True), **filters)
+            sort_by ="id"
+            if sort_order.lower() == "desc":
+                sort_by = "-" +sort_by  # Prefix "-" for descending order
+            sortedQueryset = queryset.order_by(sort_by)
+            logger.info("query set : "+str(sortedQueryset))
+            paginator = MyPaginator()
+            paginated_queryset = paginator.paginate_queryset(queryset, request)
+            serializer = ApplicationDetailsSerializer(paginated_queryset,many=True)
+            total_pages = paginator.page.paginator.num_pages            
+            for i in serializer.data:
+                try :
+                    profile =i.get('profile',None)
+                    if profile :
+                        logger.info("profile :"+str(profile))
+                        i['profile'] = profile.replace("https://yuppeducational-images.s3.amazonaws.com","https://d28rlmk1ou6g18.cloudfront.net")
+                        i['profile'] = profile.replace("https://yuppeducational-images.s3.ap-south-1.amazonaws.com", "https://d28rlmk1ou6g18.cloudfront.net")
                 except Exception as e:
                     logger.exception(traceback.format_exc())
                     logger.exception("Exception occured :"+str(e))
                     return Response({"status ": False,"error ": str(e)})
-        except Session.DoesNotExist:
-            return Response({"error": "Invalid session"}, status=status.HTTP_403_FORBIDDEN)
-        except User.DoesNotExist:
-            return Response({"error": "User does not exist"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"status":True,"response":{"data":serializer.data,"total_pages": total_pages}})
+        except Exception as e:
+            logger.exception(traceback.format_exc())
+            logger.exception("Exception occured :"+str(e))
+            return Response({"status ": False,"error ": str(e)})
         
 
         
@@ -2095,7 +2079,7 @@ class SponsoredApplications(APIView,MyPaginator):
         except Exception as e:
             logger.exception(traceback.format_exc())
             logger.exception("Exception occured :"+str(e))
-            return Response({"status ": False,"error ": str})
+            return Response({"status ": False,"error ": str(e)})
 
 
 class getBankDetails(APIView):
