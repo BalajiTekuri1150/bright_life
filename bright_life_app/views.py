@@ -642,7 +642,9 @@ def addChildToZoho(child):
     if 'mobile' in child and child['mobile']:
         filters['data'][0]["Mobile"] = child['mobile']
     if 'country' in child and child['country']:
-        filters['data'][0]["Country"] = child.country['name']
+        filters['data'][0]["Country"] = child['country']['name']
+    if 'state' in child and child['state']:
+        filters['data'][0]["State"] = child['state']['name']
     if 'school' in child and child['school']:
         filters['data'][0]["School"] = child['school']
     if 'school_address' in child and child['school_address']:
