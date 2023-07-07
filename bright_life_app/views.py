@@ -2003,7 +2003,7 @@ class getGuardianApplicationDetails(APIView,MyPaginator):
             sortedQueryset = queryset.order_by(sort_by)
             logger.info("query set : "+str(sortedQueryset))
             paginator = MyPaginator()
-            paginated_queryset = paginator.paginate_queryset(queryset, request)
+            paginated_queryset = paginator.paginate_queryset(sortedQueryset, request)
             serializer = ApplicationDetailsSerializer(paginated_queryset,many=True)
             total_pages = paginator.page.paginator.num_pages            
             for i in serializer.data:
