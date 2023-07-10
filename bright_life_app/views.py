@@ -1916,6 +1916,7 @@ class getApplicationDetails(APIView,MyPaginator):
         child_type = self.request.GET.get("child_type",None)
         guardian = self.request.GET.get("guardian_id",None)
         family_income = self.request.GET.get("annual_income",None)
+        age = self.request.GET.get("age",None)
         if application_id:
             filters["id"]=application_id
         if email:
@@ -1936,6 +1937,8 @@ class getApplicationDetails(APIView,MyPaginator):
             filters["guardian"] = guardian
         if family_income:
             filters["annual_income__lte"] = family_income
+        if age:
+            filters["age__lte"] = age
         try:
             queryset = Application.objects.filter(Q(is_active=True), **filters)
             paginator = MyPaginator()
@@ -1975,6 +1978,7 @@ class getGuardianApplicationDetails(APIView,MyPaginator):
         guardian = self.request.GET.get("guardian_id",None)
         family_income = self.request.GET.get("annual_income",None)
         sort_order = self.request.GET.get("sort_order", "asc")
+        age = self.request.GET.get("age",None)
         if application_id:
             filters["id"]=application_id
         if email:
@@ -1995,11 +1999,13 @@ class getGuardianApplicationDetails(APIView,MyPaginator):
             filters["guardian"] = guardian
         if family_income:
             filters["annual_income__lte"] = family_income
+        if age:
+            filters["age__lte"] = age
         try:
             queryset = Application.objects.filter(Q(is_active=True), **filters)
-            sort_by ="id"
-            if sort_order.lower() == "desc":
-                sort_by = "-" +sort_by  # Prefix "-" for descending order
+            sort_by ="-id"
+            if sort_order.lower() == "asc":
+                sort_by = "id"  # Prefix "-" for descending order
             sortedQueryset = queryset.order_by(sort_by)
             logger.info("query set : "+str(sortedQueryset))
             paginator = MyPaginator()
