@@ -1977,7 +1977,7 @@ class getGuardianApplicationDetails(APIView,MyPaginator):
         child_type = self.request.GET.get("child_type",None)
         guardian = self.request.GET.get("guardian_id",None)
         family_income = self.request.GET.get("annual_income",None)
-        sort_order = self.request.GET.get("sort_order", "asc")
+        sort_order = self.request.GET.get("sort_order", "desc")
         age = self.request.GET.get("age",None)
         if application_id:
             filters["id"]=application_id
@@ -2005,7 +2005,7 @@ class getGuardianApplicationDetails(APIView,MyPaginator):
             queryset = Application.objects.filter(Q(is_active=True), **filters)
             sort_by ="-id"
             if sort_order.lower() == "asc":
-                sort_by = "id"  # Prefix "-" for descending order
+                sort_by = "id"  # Prefix "-" for ascending order
             sortedQueryset = queryset.order_by(sort_by)
             logger.info("query set : "+str(sortedQueryset))
             paginator = MyPaginator()
@@ -2047,7 +2047,7 @@ class SponsoredApplications(APIView,MyPaginator):
         gender = self.request.GET.get("gender",None)
         child_type = self.request.GET.get("child_type",None)
         guardian = self.request.GET.get("guardian_id",None)
-        sort_order = self.request.GET.get("sort_order", "asc")
+        sort_order = self.request.GET.get("sort_order", "desc")
         if email:
             filters["email"]=email
         if search:
@@ -2069,9 +2069,10 @@ class SponsoredApplications(APIView,MyPaginator):
             applicationIds = Sponsorship.objects.filter(sponsor_id = sponsor_id,is_active=True).values_list('application',flat=True)
             logger.info("Application Ids :"+str(applicationIds))
             queryset = Application.objects.filter(id__in=applicationIds,**filters,is_active=True)
-            sort_by ="id"
-            if sort_order.lower() == "desc":
-                sort_by = "-" +sort_by  # Prefix "-" for descending order
+            sort_by ="-id"
+            if sort_order.lower() == "asc":
+                sort_by = "id"  # Prefix "-" for ascending order
+            sortedQueryset = queryset.order_by(sort_by)
             sortedQueryset = queryset.order_by(sort_by)
             logger.info("query set : "+str(sortedQueryset))
             paginator = MyPaginator()
