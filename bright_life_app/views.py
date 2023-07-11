@@ -2122,15 +2122,28 @@ class UpdateBankDetails(APIView):
                 data['last_updated_by'] = request.user.name
                 data['application'] = data.pop("application_id")
                 serializer = BankDetailsSerializer(instance,data=data)
-                if serializer.is_valid():
-                    updatedBankDetails=serializer.save()
-                    logger.info("updatedBankDetails :")
-                    logger.info(updatedBankDetails)
-                    response = ClientBankDetailsSerializer(updatedBankDetails)
-                    logger.info(response.data)
-                    return Response({"status":True,"response":{"data":response.data}})
-                else:
-                    return Response({"status":False,"error":{"message":serializer.errors}})
+                try:
+                    serializer.is_valid(raise_exception=True)
+                except serializers.ValidationError as e:
+                    errors = dict(e.detail)
+                    # Customize the error response for specific fields
+                    if 'ifsc' in errors:
+                        errors['ifsc_code'] = ['IFSC code must have at most 6 characters.']
+                    if 'account_number' in errors:
+                        errors['account_number'] = ["Account Number must have at most 18 characters."]
+                    return Response({"status": False, "error": {"message": errors}})
+
+                updatedBankDetails=serializer.save()
+                logger.info("updatedBankDetails :")
+                logger.info(updatedBankDetails)
+                response = ClientBankDetailsSerializer(updatedBankDetails)
+                logger.info(response.data)
+                return Response({"status":True,"response":{"data":response.data}})
+
+                # if serializer.is_valid():
+                
+                # else:
+                #     return Response({"status":False,"error":{"message":serializer.errors}})
             except BankDetails.DoesNotExist:
                 return Response({"status":False,"error":{"message":"bank details doesn't exist with the given id "}})
         else :
