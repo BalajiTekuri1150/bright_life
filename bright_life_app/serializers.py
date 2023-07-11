@@ -502,6 +502,15 @@ class BankDetailsSerializer(serializers.ModelSerializer):
     model = BankDetails
     # fields = "__all__"
     fields = ['id','application_id','bank_name','state','postal_code','account_number','account_holder','branch','ifsc','created_by','last_updated_by']
+  def validate_ifsc(self, value):
+    if len(value) > 6:
+        raise serializers.ValidationError("IFSC code must have at most 6 characters.")
+    return value
+  def validate_account_number(self,value):
+    if len(value) > 18:
+      raise serializers.ValidationError("Account Number must have at most 18 characters.")
+    return value
+
 
 
 class ClientBankDetailSerializer(serializers.ModelSerializer):
