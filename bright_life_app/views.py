@@ -2109,7 +2109,7 @@ class getBankDetails(APIView):
             return Response({"status":False,"error":{"message":"missing parameter application_id"}})
 
 class UpdateBankDetails(APIView):
-    permission_classes =[IsAuthenticated,GuardianPermission]
+    permission_classes =[IsAuthenticated]
     authentication_classes = [TokenAuthentication]
 
     def post(self,request):
@@ -2124,13 +2124,15 @@ class UpdateBankDetails(APIView):
                 serializer = BankDetailsSerializer(instance,data=data)
                 try:
                     serializer.is_valid(raise_exception=True)
-                except serializers.ValidationError as e:
+                except ValidationError as e:
                     errors = dict(e.detail)
                     # Customize the error response for specific fields
-                    if 'ifsc' in errors:
-                        errors['ifsc_code'] = ['IFSC code must have at most 6 characters.']
+                    if 'postal_code' in errors:
+                        errors['postal_code'] = ['Postal code should not contain more than 6 characters.']
                     if 'account_number' in errors:
-                        errors['account_number'] = ["Account Number must have at most 18 characters."]
+                        errors['account_number'] = ["Account Number shouldn't contain more than 18 characters."]
+                    if 'ifsc' in errors:
+                        errors['ifsc'] = ["IFSC code shouldn't contain more than 11 characters"]
                     return Response({"status": False, "error": {"message": errors}})
 
                 updatedBankDetails=serializer.save()
