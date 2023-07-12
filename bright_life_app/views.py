@@ -2121,31 +2121,17 @@ class UpdateBankDetails(APIView):
                 data['created_by'] = instance.created_by
                 data['last_updated_by'] = request.user.name
                 data['application'] = data.pop("application_id")
-                serializer = BankDetailsSerializer(instance,data=data)
-                try:
-                    serializer.is_valid(raise_exception=True)
-                except ValidationError as e:
-                    errors = dict(e.detail)
-                    # Customize the error response for specific fields
-                    if 'postal_code' in errors:
-                        errors['postal_code'] = ['Postal code should not contain more than 6 characters.']
-                    if 'account_number' in errors:
-                        errors['account_number'] = ["Account Number shouldn't contain more than 18 characters."]
-                    if 'ifsc' in errors:
-                        errors['ifsc'] = ["IFSC code shouldn't contain more than 11 characters"]
-                    return Response({"status": False, "error": {"message": errors}})
+                serializer = BankDetailsSerializer(instance,data=data)                
 
-                updatedBankDetails=serializer.save()
-                logger.info("updatedBankDetails :")
-                logger.info(updatedBankDetails)
-                response = ClientBankDetailsSerializer(updatedBankDetails)
-                logger.info(response.data)
-                return Response({"status":True,"response":{"data":response.data}})
-
-                # if serializer.is_valid():
-                
-                # else:
-                #     return Response({"status":False,"error":{"message":serializer.errors}})
+                if serializer.is_valid():
+                    updatedBankDetails=serializer.save()
+                    logger.info("updatedBankDetails :")
+                    logger.info(updatedBankDetails)
+                    response = ClientBankDetailsSerializer(updatedBankDetails)
+                    logger.info(response.data)
+                    return Response({"status":True,"response":{"data":response.data}})
+                else:
+                    return Response({"status":False,"error":{"message":serializer.errors}})
             except BankDetails.DoesNotExist:
                 return Response({"status":False,"error":{"message":"bank details doesn't exist with the given id "}})
         else :

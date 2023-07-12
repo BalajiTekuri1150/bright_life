@@ -497,22 +497,36 @@ class ClientBankDetailsSerializer(serializers.ModelSerializer):
 
 
 class BankDetailsSerializer(serializers.ModelSerializer):
+  postal_code = serializers.CharField(max_length=6, error_messages={
+        'max_length': 'Postal code should not contain more than 6 characters.'
+    })
+  account_number = serializers.CharField(max_length=18, error_messages={
+        'max_length': 'Account number should not contain more than 18 characters.'
+    })
+  ifsc = serializers.CharField(max_length=11, error_messages={
+        'max_length': 'IFSC Code should not contain more than 11 characters.'
+    })
 
   class Meta:
     model = BankDetails
     # fields = "__all__"
     fields = ['id','application_id','bank_name','state','postal_code','account_number','account_holder','branch','ifsc','created_by','last_updated_by']
-  def validate_postal_code(self, value):
-    if len(value) > 6:
-        raise serializers.ValidationError("Postal code shouldn't contain more than 6 characters.")
-    return value
-  def validate_account_number(self,value):
-    if len(value) > 18:
-      raise serializers.ValidationError("Account Number shouldn't contain more than 18 characters.")
-    return value
-  def validate_ifsc(self,value):
-    if len(value) > 11:
-      raise serializers.ValidationError("IFSC code shouldn't contain more than 11 characters")
+    def validate(self, attrs):
+      errors = {}
+
+      if 'postal_code' in attrs and len(attrs['postal_code']) > 6:
+        errors['postal_code'] = ['Postal code should not contain more than 6 characters.']
+
+      if 'account_number' in attrs and len(attrs['account_number']) > 18:
+        errors['account_number'] = ["Account number shouldn't contain more than 18 characters."]
+
+      if 'ifsc' in attrs and len(attrs['ifsc']) > 11:
+        errors['ifsc'] = ["IFSC Code shouldn't contain more than 11 characters."]
+
+      if errors:
+        raise serializers.ValidationError(errors)
+
+      return attrs
 
 
 
