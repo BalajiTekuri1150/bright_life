@@ -387,7 +387,7 @@ class CreateCheckoutSession(APIView):
             try:
                 if not is_recurring:
                     session = stripe.checkout.Session.create(
-                        success_url='https://test.brightlife.org/',
+                        success_url='https://test.brightlife.org/payment/successful',
                         cancel_url=current_url,
                         payment_method_types=['card'],
                         line_items=[{
@@ -408,7 +408,7 @@ class CreateCheckoutSession(APIView):
                     )
                 else:
                     session = stripe.checkout.Session.create(
-                        success_url='https://test.brightlife.org/',
+                        success_url='https://test.brightlife.org/payment/successful',
                         cancel_url=current_url,
                         payment_method_types=['card'],
                         mode='subscription',
