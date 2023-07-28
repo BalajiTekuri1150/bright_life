@@ -15,16 +15,16 @@ from .chargebee_utils import *
 
 
 urlpatterns =[
-    path('brightlife-test.chargebee.com/api/v2/item_families',createItemFamily.as_view(),name="item-families"),
-    path('brightlife-test.chargebee.com/api/v2/items',createItem.as_view(),name="items"),
-    path('brightlife-test.chargebee.com/api/v2/get/items/list',getItemsList.as_view(),name="items"),
-    path('brightlife-test.chargebee.com/api/v2/item_prices',createItemPrice.as_view(),name="create-item-price"),
-    path('brightlife-test.chargebee.com/api/v2/update/item_prices',updateItemPrice.as_view(),name="update-item-price"),
-    path('brightlife-test.chargebee.com/api/v2/list/customers',listCustomers.as_view(),name="list-customers"),
-    path('brightlife-test.chargebee.com/api/v2/get/checkout',getCheckoutPage.as_view(),name="get-checkout-page"),
-    path('brightlife-test.chargebee.com/api/v2/get/item/prices',getItemPricesList.as_view(),name="get-checkout-page"),
-    path('brightlife-test.chargebee.com/api/v2/create/customer',createCustomer.as_view(),name="get-checkout-page"),
-    path('brightlife-test.chargebee.com/api/v2/update/subscription/details',updateSubscriptionDetails.as_view(),name="get-checkout-page"),
+    path('brightlifeorg-test.chargebee.com/api/v2/item_families',createItemFamily.as_view(),name="item-families"),
+    path('brightlifeorg-test.chargebee.com/api/v2/items',createItem.as_view(),name="items"),
+    path('brightlifeorg-test.chargebee.com/api/v2/get/items/list',getItemsList.as_view(),name="items"),
+    path('brightlifeorg-test.chargebee.com/api/v2/item_prices',createItemPrice.as_view(),name="create-item-price"),
+    path('brightlifeorg-test.chargebee.com/api/v2/update/item_prices',updateItemPrice.as_view(),name="update-item-price"),
+    path('brightlifeorg-test.chargebee.com/api/v2/list/customers',listCustomers.as_view(),name="list-customers"),
+    path('brightlifeorg-test.chargebee.com/api/v2/get/checkout',getCheckoutPage.as_view(),name="get-checkout-page"),
+    path('brightlifeorg-test.chargebee.com/api/v2/get/item/prices',getItemPricesList.as_view(),name="get-checkout-page"),
+    path('brightlifeorg-test.chargebee.com/api/v2/create/customer',createCustomer.as_view(),name="get-checkout-page"),
+    path('brightlifeorg-test.chargebee.com/api/v2/update/subscription/details',updateSubscriptionDetails.as_view(),name="get-checkout-page"),
 
     path('brightlife/google/signup/', GoogleSignup.as_view(), name='google_signup'),
     path('brightlife/google/login/', GoogleSignIn.as_view(), name='google_login'),

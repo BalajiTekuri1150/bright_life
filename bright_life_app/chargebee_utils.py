@@ -104,6 +104,7 @@ class getItemsList(APIView):
     def get(self,request):
         try:
             entries = chargebee.Item.list({
+                "item_family_id[is]" : request.GET.get('item_family_id','brightlife_sponsorship')
             })
             for entry in entries:
                 item = entry.item
@@ -172,9 +173,13 @@ class listCustomers(APIView):
             response =[]
             entries = chargebee.Customer.list({
                 "id[is]" : request.GET.get('id',None),
+                "id[isnot]":None,
                 "first_name[is]" : request.GET.get('first_name',None),
+                "first_name[isnot]" : None,
                 "last_name[is]" : request.GET.get('last_name',None),
-                "email[is]" : request.GET.get('email',None)
+                "last_name[isnot]" : None,
+                "email[is]" : request.GET.get('email',None),
+                "email[is]" : None
             })
             logger.info(entries)
             if len(entries) >0:
@@ -196,7 +201,9 @@ class getCheckoutPage(APIView):
             "currency_code": request.data['currency_code'],
             "customer" : request.data['customer'],
             "subscription_items" : request.data['subscription_items'],
-            "subscription" : request.data['subscription']
+            "subscription" : request.data['subscription'],
+            "redirect_url": "https://test.brightlife.org/payment/successful",
+            "cancel_url": request.build_absolute_uri()
             })
             logger.info(result.hosted_page)
             hosted_page = result.hosted_page
