@@ -197,7 +197,7 @@ class getCheckoutPage(APIView):
         logger.info(request.data)
         try:
             result = chargebee.HostedPage.checkout_new_for_items({
-            "shipping_address" : request.data['shipping_address'],
+            # "shipping_address" : request.data['shipping_address'],
             "currency_code": request.data['currency_code'],
             "customer" : request.data['customer'],
             "subscription_items" : request.data['subscription_items'],
