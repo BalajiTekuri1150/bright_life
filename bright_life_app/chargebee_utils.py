@@ -219,23 +219,34 @@ class getCheckoutPage(APIView):
 class getItemPricesList(APIView):
 
     def get(self,request):
-        currency_code = request.GET.get("currency_code",["INR","USD"])
+        currency_code = request.GET.get("currency_code",None)
         item_id = request.GET.get("item_id",None)
         period = request.GET.get("period",None)
-        period_unit = request.GET.get("period_unit",["day", "week", "month", "year"])
-        status = request.GET.get("status","active")
+        period_unit = request.GET.get("period_unit",None)
+        status = request.GET.get("status",None)
+        next_offset = request.GET.get("next_offset",None)
+        limit = request.GET.get("limit",50)
         logger.info(currency_code)
+        filters ={}
+        if currency_code:
+            filters["currency_code[in]"] =currency_code
+        if item_id:
+            filters["item_id[is]"] = item_id
+        if period:
+            filters["period[is]"] = period
+        if period_unit:
+            filters["period_unit[in]"] = period_unit
+        if status:
+            filters["status[is]"] = status
+        if next_offset:
+            filters["next_offset"] = next_offset
+        if limit:
+            filters["limit"] = limit
+        print("dict"+str(filters))
         try:
-            entries = chargebee.ItemPrice.list({
-                "currency_code[in]" : currency_code,
-                "currency_code[isnot]":None,
-                "item_id[is]":item_id,
-                "item_id[isnot]":None,
-                "period[is]":period,
-                "period[notin]":[None],
-                "period_unit[in]":period_unit,
-                "status[is]":status
-            })
+            entries = chargebee.ItemPrice.list(
+                filters
+            )
             logger.info(entries)
             if len(entries) > 0:
                 return Response({"status":True,"response":entries.__dict__})
