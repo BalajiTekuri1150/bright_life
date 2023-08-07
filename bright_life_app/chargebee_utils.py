@@ -202,7 +202,30 @@ class getCheckoutPage(APIView):
             "customer" : request.data['customer'],
             "subscription_items" : request.data['subscription_items'],
             "subscription" : request.data['subscription'],
-            "redirect_url": "https://test.brightlife.org/payment/successful",
+            "redirect_url": request.data.get("redirect_url","https://brightlife.org/payment/successful"),
+            "cancel_url": request.build_absolute_uri()
+            })
+            logger.info(result.hosted_page)
+            hosted_page = result.hosted_page
+            return Response({'status':True,"response":{"data":hosted_page.__dict__}})
+        except InvalidRequestError as e:
+            logger.info(str(e))
+            return Response({"status":False,"error":{"message":str(e)}})
+        except Exception as e:
+            logger.info(str(e))
+            return Response({"status":False,"error":{"message":str(e)}})
+        
+    
+class getOneTimeCheckoutPage(APIView):
+    def post(self,request):
+        logger.info(request.data)
+        try:
+            result = chargebee.HostedPage.checkout_one_time_for_items({
+            # "shipping_address" : request.data['shipping_address'],
+            "currency_code": request.data.get('currency_code'),
+            "customer" : request.data.get('customer'),
+            "item_prices" : request.data.get('item_prices'),
+            "redirect_url": request.data.get("redirect_url","https://brightlife.org/payment/successful"),
             "cancel_url": request.build_absolute_uri()
             })
             logger.info(result.hosted_page)
