@@ -265,7 +265,6 @@ class getItemPricesList(APIView):
             filters["next_offset"] = next_offset
         if limit:
             filters["limit"] = limit
-        print("dict"+str(filters))
         try:
             entries = chargebee.ItemPrice.list(
                 filters
